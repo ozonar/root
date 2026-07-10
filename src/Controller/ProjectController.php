@@ -72,6 +72,7 @@ class ProjectController extends AbstractController
                 $tasksResult[] = [
                     'id' => $task->getId(),
                     'text' => $task->getText(),
+                    'description' => $task->getDescription(),
                     'status' => $task->getStatus()?->getSystemName(),
                     'statusName' => $task->getStatus()?->getName(),
                     'statusIcon' => $task->getStatus()?->getIcon(),
