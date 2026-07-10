@@ -45,6 +45,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Custom select dropdown toggle
+    document.addEventListener('click', function(e) {
+        var trigger = document.getElementById('modal-status-trigger');
+        var dropdown = document.getElementById('modal-status-dropdown');
+        if (!trigger || !dropdown) return;
+
+        if (trigger.contains(e.target)) {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+            trigger.classList.toggle('open');
+        } else if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove('open');
+            trigger.classList.remove('open');
+        }
+    });
+
     // Modal handlers
     var modalClose = document.getElementById('modal-close');
     if (modalClose) {

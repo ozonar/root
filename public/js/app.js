@@ -173,6 +173,9 @@ function renderTaskItem(task, level, taskList, options) {
     div.dataset.parentId = task.parentId !== undefined && task.parentId !== null ? task.parentId : '';
     div.dataset.order = task.order;
     div.dataset.pageId = options.pageId;
+    div.dataset.assignee = task.assignee || '';
+    div.dataset.status = task.status || '';
+    div.dataset.description = task.description || '';
 
     var row = document.createElement('div');
     row.className = 'task-row';
@@ -866,46 +869,95 @@ function openTaskModal(taskId) {
     var textEl = el.querySelector('.task-text');
     document.getElementById('modal-task-text').innerHTML = textEl ? textEl.innerHTML : '';
 
-    var description = '';
     var isPriority = false;
-    var currentStatus = 'processed';
-
-    var checkbox = el.querySelector('.task-checkbox');
-    if (checkbox && checkbox.classList.contains('checked')) {
-        currentStatus = 'finished';
-    }
+    var currentStatus = el.dataset.status || 'processed';
 
     var row = el.querySelector('.task-row');
     if (row && row.classList.contains('priority-high')) {
         isPriority = true;
     }
 
-    var badge = el.querySelector('.task-status-badge');
-    if (badge) {
-        currentStatus = badge.textContent;
-    }
-
+    // Read description from data attribute
+    var description = el.dataset.description || '';
     document.getElementById('modal-task-description').value = description;
-    document.getElementById('modal-task-priority').value = isPriority ? '1' : '0';
+    document.getElementById('modal-task-priority').checked = isPriority;
 
+    // Fill hidden native select (for value)
     var statusSelect = document.getElementById('modal-task-status');
     statusSelect.innerHTML = '';
+
+    // Fill custom status dropdown with FontAwesome icons
+    var dropdown = document.getElementById('modal-status-dropdown');
+    dropdown.innerHTML = '';
+    var triggerText = document.getElementById('modal-status-trigger').querySelector('.custom-select-trigger-text');
+
     statuses.forEach(function(s) {
+        // Native option
         var opt = document.createElement('option');
         opt.value = s.systemName;
-        opt.textContent = s.name;
         if (s.systemName === currentStatus) opt.selected = true;
         statusSelect.appendChild(opt);
+
+        // Custom dropdown item
+        var item = document.createElement('div');
+        item.className = 'custom-select-item';
+        item.dataset.value = s.systemName;
+
+        var iconHtml = '';
+        if (s.systemName === 'processed') {
+            iconHtml = '<span class="menu-checkbox-icon empty"></span>';
+        } else if (s.systemName === 'finished') {
+            iconHtml = '<span class="menu-checkbox-icon checked"><i class="fas fa-check"></i></span>';
+        } else {
+            iconHtml = '<i class="fas ' + (s.icon || 'fa-circle') + '"></i>';
+        }
+        item.innerHTML = iconHtml + ' ' + s.name;
+
+        if (s.systemName === currentStatus) {
+            item.classList.add('selected');
+            triggerText.innerHTML = iconHtml + ' ' + s.name;
+        }
+
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Update hidden select
+            statusSelect.value = s.systemName;
+            // Update trigger text
+            triggerText.innerHTML = iconHtml + ' ' + s.name;
+            // Update selected state
+            dropdown.querySelectorAll('.custom-select-item').forEach(function(el) {
+                el.classList.remove('selected');
+            });
+            item.classList.add('selected');
+            // Close dropdown
+            dropdown.classList.remove('open');
+        });
+
+        dropdown.appendChild(item);
     });
 
-    document.getElementById('task-modal').style.display = 'block';
+    // Fill assignee select
+    var assigneeSelect = document.getElementById('modal-task-assignee');
+    assigneeSelect.innerHTML = '<option value="">Без исполнителя</option>';
+    var currentAssignee = el.dataset.assignee || '';
+    projectUsers.forEach(function(u) {
+        var opt = document.createElement('option');
+        opt.value = u.email;
+        opt.textContent = u.name || u.email;
+        if (currentAssignee === u.email) {
+            opt.selected = true;
+        }
+        assigneeSelect.appendChild(opt);
+    });
+
+    document.getElementById('task-modal').style.display = 'flex';
 }
 
 function saveTaskFromModal() {
     var text = document.getElementById('modal-task-text').innerHTML;
     var description = document.getElementById('modal-task-description').value;
     var status = document.getElementById('modal-task-status').value;
-    var isPriority = document.getElementById('modal-task-priority').value === '1';
+    var isPriority = document.getElementById('modal-task-priority').checked;
     var assignee = document.getElementById('modal-task-assignee').value;
 
     var el = document.querySelector('.task-item[data-task-id="' + currentTaskId + '"]');

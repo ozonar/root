@@ -46,19 +46,28 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Статус</label>
-                    <select id="modal-task-status" class="form-select"></select>
+                    <div class="custom-select-wrapper" id="modal-status-wrapper">
+                        <div class="custom-select-trigger" id="modal-status-trigger">
+                            <span class="custom-select-trigger-text"></span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="custom-select-dropdown" id="modal-status-dropdown"></div>
+                        <select id="modal-task-status" style="display:none"></select>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Приоритет</label>
-                    <select id="modal-task-priority" class="form-select">
-                        <option value="0">Обычный</option>
-                        <option value="1">Высокий</option>
-                    </select>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="modal-task-priority">
+                        Высокий приоритет
+                    </label>
                 </div>
             </div>
             <div class="form-group">
                 <label>Ответственный</label>
-                <input type="text" id="modal-task-assignee" class="form-input" placeholder="Email ответственного">
+                <select id="modal-task-assignee" class="form-select">
+                    <option value="">Без исполнителя</option>
+                </select>
             </div>
         </div>
         <div class="modal-footer">

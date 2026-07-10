@@ -56,6 +56,13 @@ class TaskController extends AbstractController
         if (isset($data['isPriority'])) {
             $task->setPriority((bool) $data['isPriority']);
         }
+        if (isset($data['status'])) {
+            $status = $this->entityManager->getRepository(Status::class)
+                ->findOneBy(['systemName' => $data['status']]);
+            if ($status) {
+                $task->setStatus($status);
+            }
+        }
         if (array_key_exists('assignee', $data)) {
             if ($data['assignee']) {
                 $assignee = $this->entityManager->getRepository(User::class)
