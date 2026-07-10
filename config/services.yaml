@@ -1,0 +1,44 @@
+parameters:
+    mailer.adapter: '%env(MAILER_ADAPTER)%'
+    mailer.log_dir: '%kernel.project_dir%/var/mail'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    # Mailer adapter - выбирается по MAILER_ADAPTER из .env
+    App\Service\Mailer\DirectMailerAdapter:
+        tags: ['app.mailer_adapter']
+
+    App\Service\Mailer\FileMailerAdapter:
+        arguments:
+            $logDir: '%mailer.log_dir%'
+        tags: ['app.mailer_adapter']
+
+    App\Service\Mailer\UnisenderMailerAdapter:
+        arguments:
+            $apiKey: '%env(UNISENDER_API_KEY)%'
+        tags: ['app.mailer_adapter']
+
+    # Выбор адаптера на основе параметра mailer.adapter
+    App\Service\Mailer\MailerAdapterInterface:
+        factory: ['App\Service\Mailer\MailerAdapterFactory', 'create']
+        arguments:
+            $adapters: !tagged_iterator app.mailer_adapter
+            $adapterType: '%mailer.adapter%'
+
+    App\Service\Mailer\MailerService:
+        arguments:
+            $adapter: '@App\Service\Mailer\MailerAdapterInterface'

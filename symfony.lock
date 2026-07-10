@@ -1,0 +1,86 @@
+{
+    "doctrine/deprecations": {
+        "version": "1.1",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "87424683adc81d7dc305eefec1fced883084aab9"
+        }
+    },
+    "doctrine/doctrine-bundle": {
+        "version": "2.18.3"
+    },
+    "doctrine/doctrine-migrations-bundle": {
+        "version": "3.7.0"
+    },
+    "symfony/console": {
+        "version": "7.4",
+        "recipe": {
+            "version": "5.3"
+        }
+    },
+    "symfony/debug-bundle": {
+        "version": "v7.4.8"
+    },
+    "symfony/flex": {
+        "version": "2.11",
+        "recipe": {
+            "version": "2.4"
+        }
+    },
+    "symfony/form": {
+        "version": "7.4",
+        "recipe": {
+            "version": "7.2"
+        }
+    },
+    "symfony/framework-bundle": {
+        "version": "v7.4.14"
+    },
+    "symfony/mailer": {
+        "version": "7.4",
+        "recipe": {
+            "version": "4.3"
+        }
+    },
+    "symfony/maker-bundle": {
+        "version": "v1.67.0"
+    },
+    "symfony/property-info": {
+        "version": "7.4",
+        "recipe": {
+            "version": "7.3"
+        }
+    },
+    "symfony/routing": {
+        "version": "7.4",
+        "recipe": {
+            "version": "7.4"
+        }
+    },
+    "symfony/security-bundle": {
+        "version": "v7.4.14"
+    },
+    "symfony/translation": {
+        "version": "7.4",
+        "recipe": {
+            "version": "6.3"
+        }
+    },
+    "symfony/twig-bundle": {
+        "version": "v7.4.14"
+    },
+    "symfony/validator": {
+        "version": "7.4",
+        "recipe": {
+            "version": "7.0"
+        }
+    },
+    "symfony/web-profiler-bundle": {
+        "version": "v7.4.14"
+    },
+    "twig/extra-bundle": {
+        "version": "v3.24.0"
+    }
+}

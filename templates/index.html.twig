@@ -1,0 +1,341 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Checker{% endblock %}
+
+{% block body %}
+<div id="app">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <a href="/" class="header-title">Checker</a>
+        </div>
+        <div class="header-center">
+            <select id="project-selector" class="project-selector">
+            </select>
+        </div>
+        <div class="header-right">
+            <button id="new-page-btn" class="btn btn-sm btn-primary" title="Новая страница">
+                <i class="fas fa-plus"></i> Страница
+            </button>
+            <span id="user-name" class="user-name"></span>
+            <button id="logout-btn" class="btn btn-sm btn-outline" title="Выйти">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="pages-grid" id="pages-grid">
+            <div class="loading-pages">Загрузка...</div>
+        </div>
+    </main>
+</div>
+
+<!-- Full Page Editor (hidden by default) -->
+<div id="full-editor" class="full-editor" style="display: none;">
+    <div class="full-editor-header">
+        <button id="back-to-main" class="btn btn-sm btn-outline">
+            <i class="fas fa-arrow-left"></i> Назад
+        </button>
+        <h2 id="full-page-title" contenteditable="true" class="page-title-editable"></h2>
+        <div class="editor-actions">
+            <button id="add-task-btn" class="btn btn-sm btn-primary" title="Добавить задачу">
+                <i class="fas fa-plus"></i> Задача
+            </button>
+        </div>
+    </div>
+    <div class="full-editor-body">
+        <div class="tasks-container" id="tasks-container"></div>
+    </div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="task-modal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modal-title">Редактирование задачи</h3>
+            <button class="modal-close" id="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Текст задачи</label>
+                <div id="modal-task-text" contenteditable="true" class="modal-editable"></div>
+            </div>
+            <div class="form-group">
+                <label>Описание</label>
+                <textarea id="modal-task-description" class="modal-textarea" rows="4"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Статус</label>
+                    <select id="modal-task-status" class="form-select"></select>
+                </div>
+                <div class="form-group">
+                    <label>Приоритет</label>
+                    <select id="modal-task-priority" class="form-select">
+                        <option value="0">Обычный</option>
+                        <option value="1">Высокий</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Ответственный</label>
+                <input type="text" id="modal-task-assignee" class="form-input" placeholder="Email ответственного">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="modal-cancel">Отмена</button>
+            <button class="btn btn-primary" id="modal-save">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="context-menu" style="display: none;">
+    <ul class="context-menu-list">
+        <li data-action="add-child"><i class="fas fa-plus"></i> Добавить подзадачу</li>
+        <li data-action="add-above"><i class="fas fa-arrow-up"></i> Добавить сверху</li>
+        <li data-action="add-below"><i class="fas fa-arrow-down"></i> Добавить снизу</li>
+        <li class="divider"></li>
+        <li data-action="edit"><i class="fas fa-edit"></i> Редактировать</li>
+        <li data-action="set-status"><i class="fas fa-check-circle"></i> Установить статус</li>
+        <li data-action="set-priority"><i class="fas fa-exclamation-triangle"></i> Приоритет</li>
+        <li class="divider"></li>
+        <li data-action="delete" class="danger"><i class="fas fa-trash"></i> Удалить</li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+let currentProjectId = null;
+let pages = [];
+
+// ==========================================
+// Auth Check & Init
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    apiRequest('/me').then(function(response) {
+        document.getElementById('user-name').textContent = response.user.name || response.user.email;
+        loadProjects();
+    }).catch(function() {
+        localStorage.removeItem('auth_token');
+        window.location.href = '/login';
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', function() {
+        localStorage.removeItem('auth_token');
+        window.location.href = '/login';
+    });
+
+    document.getElementById('project-selector').addEventListener('change', function() {
+        currentProjectId = parseInt(this.value);
+        if (currentProjectId) {
+            loadMainPage();
+        }
+    });
+
+    document.getElementById('back-to-main').addEventListener('click', function() {
+        closeFullEditor();
+    });
+
+    document.getElementById('add-task-btn').addEventListener('click', function() {
+        var container = document.getElementById('tasks-container');
+        addNewTask(parseInt(container.dataset.pageId));
+    });
+
+    document.getElementById('new-page-btn').addEventListener('click', function() {
+        createNewPage();
+    });
+
+    document.getElementById('modal-close').addEventListener('click', function() {
+        closeModal();
+    });
+
+    document.getElementById('modal-cancel').addEventListener('click', function() {
+        closeModal();
+    });
+
+    document.getElementById('modal-save').addEventListener('click', function() {
+        saveTaskFromModal();
+    });
+
+    document.addEventListener('click', function() {
+        document.getElementById('context-menu').style.display = 'none';
+    });
+
+    document.querySelectorAll('#context-menu li[data-action]').forEach(function(li) {
+        li.addEventListener('click', function(e) {
+            e.stopPropagation();
+            handleContextAction(li.dataset.action);
+            document.getElementById('context-menu').style.display = 'none';
+        });
+    });
+
+    // Auto-save page title on input (delegated)
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'full-page-title') {
+            var title = e.target.textContent.trim();
+            var container = document.getElementById('tasks-container');
+            var pageId = parseInt(container.dataset.pageId);
+            if (title && pageId) {
+                debouncedSave('page-title', function() {
+                    apiRequest('/pages/' + pageId, 'PUT', { title: title });
+                });
+            }
+        }
+    });
+});
+
+// ==========================================
+// Projects
+// ==========================================
+
+function loadProjects() {
+    apiRequest('/projects').then(function(response) {
+        var selector = document.getElementById('project-selector');
+        selector.innerHTML = '';
+        var defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Выберите проект...';
+        selector.appendChild(defaultOption);
+
+        response.projects.forEach(function(project) {
+            var opt = document.createElement('option');
+            opt.value = project.id;
+            opt.textContent = project.name;
+            selector.appendChild(opt);
+        });
+
+        if (response.currentProjectId) {
+            selector.value = response.currentProjectId;
+            currentProjectId = response.currentProjectId;
+            loadMainPage();
+        }
+    }).catch(function(xhr) {
+        console.error('Failed to load projects:', xhr);
+    });
+}
+
+// ==========================================
+// New Page
+// ==========================================
+
+function createNewPage() {
+    if (!currentProjectId) return;
+    apiRequest('/projects/' + currentProjectId + '/pages', 'POST', {
+        title: 'Новая страница'
+    }).then(function(response) {
+        openFullEditor(response.page.id);
+    }).catch(function(xhr) {
+        console.error('Failed to create page:', xhr);
+    });
+}
+
+// ==========================================
+// Main Page - Pages Grid
+// ==========================================
+
+function loadMainPage() {
+    if (!currentProjectId) return;
+
+    apiRequest('/projects/' + currentProjectId + '/pages').then(function(response) {
+        pages = response.pages;
+        renderPagesGrid();
+    }).catch(function(xhr) {
+        console.error('Failed to load pages:', xhr);
+    });
+}
+
+function renderPagesGrid() {
+    var grid = document.getElementById('pages-grid');
+    grid.innerHTML = '';
+
+    if (pages.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt fa-3x"></i><p>Нет страниц</p></div>';
+        return;
+    }
+
+    var twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+    var expandedCount = 0;
+
+    pages.forEach(function(page) {
+        var editedAt = page.editedAt ? new Date(page.editedAt) : new Date(page.createdAt);
+        var isRecent = editedAt >= twoWeeksAgo;
+        var shouldExpand = isRecent && expandedCount < 3;
+
+        if (shouldExpand) expandedCount++;
+
+        var card = document.createElement('div');
+        card.className = 'page-card ' + (shouldExpand ? 'expanded' : 'collapsed');
+        card.dataset.pageId = page.id;
+
+        // Header with link to /page/{id}
+        var header = document.createElement('div');
+        header.className = 'page-card-header';
+
+        var titleLink = document.createElement('a');
+        titleLink.href = '/page/' + page.id;
+        titleLink.className = 'page-card-title';
+        titleLink.textContent = page.title;
+        header.appendChild(titleLink);
+
+        var dateStr = editedAt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+        var dateSpan = document.createElement('span');
+        dateSpan.className = 'page-card-date';
+        dateSpan.textContent = dateStr;
+        header.appendChild(dateSpan);
+
+        card.appendChild(header);
+
+        // Inline editor (only for expanded)
+        if (shouldExpand) {
+            var editorContainer = document.createElement('div');
+            editorContainer.className = 'page-card-editor';
+            card.appendChild(editorContainer);
+            var pageTasks = (page.tasks || []).slice(0, 10);
+            renderInlineTasks(pageTasks, editorContainer, page.id);
+        }
+
+        grid.appendChild(card);
+    });
+
+    // Make sure sortable is set up after all cards are in DOM
+    makeSortable();
+}
+
+// ==========================================
+// Full Page Editor
+// ==========================================
+
+function openFullEditor(pageId) {
+    document.getElementById('pages-grid').style.display = 'none';
+    document.getElementById('full-editor').style.display = 'block';
+    document.getElementById('tasks-container').dataset.pageId = pageId;
+
+    apiRequest('/pages/' + pageId).then(function(response) {
+        document.getElementById('full-page-title').textContent = response.page.title;
+        statuses = response.statuses || [];
+        renderInlineTasks(response.tasks || [], document.getElementById('tasks-container'), pageId);
+    }).catch(function(xhr) {
+        console.error('Failed to load page:', xhr);
+    });
+}
+
+function closeFullEditor() {
+    document.getElementById('full-editor').style.display = 'none';
+    document.getElementById('pages-grid').style.display = '';
+    loadMainPage();
+}
+</script>
+{% endblock %}
