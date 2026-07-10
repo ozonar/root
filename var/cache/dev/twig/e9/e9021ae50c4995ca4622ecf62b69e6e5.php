@@ -110,9 +110,6 @@ class __TwigTemplate_96170077b1230f7a150498769cd9f0e7 extends Template
             </select>
         </div>
         <div class=\"header-right\">
-            <button id=\"new-page-btn\" class=\"btn btn-sm btn-primary\" title=\"Новая страница\">
-                <i class=\"fas fa-plus\"></i> Страница
-            </button>
             <span id=\"user-name\" class=\"user-name\"></span>
             <button id=\"logout-btn\" class=\"btn btn-sm btn-outline\" title=\"Выйти\">
                 <i class=\"fas fa-sign-out-alt\"></i>
@@ -124,6 +121,11 @@ class __TwigTemplate_96170077b1230f7a150498769cd9f0e7 extends Template
     <main class=\"main-content\">
         <div class=\"pages-grid\" id=\"pages-grid\">
             <div class=\"loading-pages\">Загрузка...</div>
+        </div>
+        <div class=\"new-page-bottom\">
+            <button id=\"new-page-btn\" class=\"btn btn-primary\" title=\"Новая страница\">
+                <i class=\"fas fa-plus\"></i> Страница
+            </button>
         </div>
     </main>
 </div>
@@ -187,6 +189,26 @@ class __TwigTemplate_96170077b1230f7a150498769cd9f0e7 extends Template
     </div>
 </div>
 
+<!-- New Page Modal -->
+<div class=\"modal-overlay\" id=\"new-page-modal\" style=\"display: none;\">
+    <div class=\"modal modal-sm\">
+        <div class=\"modal-header\">
+            <h3>Новая страница</h3>
+            <button class=\"modal-close\" id=\"new-page-modal-close\">&times;</button>
+        </div>
+        <div class=\"modal-body\">
+            <div class=\"form-group\">
+                <label>Название страницы</label>
+                <input type=\"text\" id=\"new-page-title-input\" class=\"form-input\" placeholder=\"Введите название...\" autofocus>
+            </div>
+        </div>
+        <div class=\"modal-footer\">
+            <button class=\"btn btn-secondary\" id=\"new-page-modal-cancel\">Отмена</button>
+            <button class=\"btn btn-primary\" id=\"new-page-modal-save\">Создать</button>
+        </div>
+    </div>
+</div>
+
 <!-- Context Menu -->
 <div class=\"context-menu\" id=\"context-menu\" style=\"display: none;\">
     <ul class=\"context-menu-list\">
@@ -211,7 +233,7 @@ class __TwigTemplate_96170077b1230f7a150498769cd9f0e7 extends Template
         yield from [];
     }
 
-    // line 110
+    // line 132
     /**
      * @return iterable<null|scalar|\Stringable>
      */
@@ -224,7 +246,7 @@ class __TwigTemplate_96170077b1230f7a150498769cd9f0e7 extends Template
         $__internal_6f47bbe9983af81f1e7450e9a3e3768f = $this->extensions["Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension"];
         $__internal_6f47bbe9983af81f1e7450e9a3e3768f->enter($__internal_6f47bbe9983af81f1e7450e9a3e3768f_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "block", "javascripts"));
 
-        // line 111
+        // line 133
         yield "<script>
 let currentProjectId = null;
 let pages = [];
@@ -270,7 +292,26 @@ document.addEventListener(\x27DOMContentLoaded\x27, function() {
     });
 
     document.getElementById(\x27new-page-btn\x27).addEventListener(\x27click\x27, function() {
-        createNewPage();
+        showNewPageModal();
+    });
+
+    document.getElementById(\x27new-page-modal-close\x27).addEventListener(\x27click\x27, function() {
+        closeNewPageModal();
+    });
+
+    document.getElementById(\x27new-page-modal-cancel\x27).addEventListener(\x27click\x27, function() {
+        closeNewPageModal();
+    });
+
+    document.getElementById(\x27new-page-modal-save\x27).addEventListener(\x27click\x27, function() {
+        confirmNewPage();
+    });
+
+    document.getElementById(\x27new-page-title-input\x27).addEventListener(\x27keydown\x27, function(e) {
+        if (e.key === \x27Enter\x27) {
+            e.preventDefault();
+            confirmNewPage();
+        }
     });
 
     document.getElementById(\x27modal-close\x27).addEventListener(\x27click\x27, function() {
@@ -346,12 +387,30 @@ function loadProjects() {
 // New Page
 // ==========================================
 
-function createNewPage() {
+function showNewPageModal() {
     if (!currentProjectId) return;
+    document.getElementById(\x27new-page-title-input\x27).value = \x27\x27;
+    document.getElementById(\x27new-page-modal\x27).style.display = \x27flex\x27;
+    setTimeout(function() {
+        document.getElementById(\x27new-page-title-input\x27).focus();
+    }, 100);
+}
+
+function closeNewPageModal() {
+    document.getElementById(\x27new-page-modal\x27).style.display = \x27none\x27;
+}
+
+function confirmNewPage() {
+    var title = document.getElementById(\x27new-page-title-input\x27).value.trim();
+    if (!title) {
+        document.getElementById(\x27new-page-title-input\x27).focus();
+        return;
+    }
+    closeNewPageModal();
     apiRequest(\x27/projects/\x27 + currentProjectId + \x27/pages\x27, \x27POST\x27, {
-        title: \x27Новая страница\x27
+        title: title
     }).then(function(response) {
-        openFullEditor(response.page.id);
+        window.location.href = \x27/page/\x27 + response.page.id;
     }).catch(function(xhr) {
         console.error(\x27Failed to create page:\x27, xhr);
     });
@@ -486,7 +545,7 @@ function closeFullEditor() {
      */
     public function getDebugInfo(): array
     {
-        return array (  228 => 111,  215 => 110,  102 => 6,  89 => 5,  66 => 3,  43 => 1,);
+        return array (  250 => 133,  237 => 132,  102 => 6,  89 => 5,  66 => 3,  43 => 1,);
     }
 
     public function getSourceContext(): Source
@@ -507,9 +566,6 @@ function closeFullEditor() {
             </select>
         </div>
         <div class=\"header-right\">
-            <button id=\"new-page-btn\" class=\"btn btn-sm btn-primary\" title=\"Новая страница\">
-                <i class=\"fas fa-plus\"></i> Страница
-            </button>
             <span id=\"user-name\" class=\"user-name\"></span>
             <button id=\"logout-btn\" class=\"btn btn-sm btn-outline\" title=\"Выйти\">
                 <i class=\"fas fa-sign-out-alt\"></i>
@@ -521,6 +577,11 @@ function closeFullEditor() {
     <main class=\"main-content\">
         <div class=\"pages-grid\" id=\"pages-grid\">
             <div class=\"loading-pages\">Загрузка...</div>
+        </div>
+        <div class=\"new-page-bottom\">
+            <button id=\"new-page-btn\" class=\"btn btn-primary\" title=\"Новая страница\">
+                <i class=\"fas fa-plus\"></i> Страница
+            </button>
         </div>
     </main>
 </div>
@@ -580,6 +641,26 @@ function closeFullEditor() {
         <div class=\"modal-footer\">
             <button class=\"btn btn-secondary\" id=\"modal-cancel\">Отмена</button>
             <button class=\"btn btn-primary\" id=\"modal-save\">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- New Page Modal -->
+<div class=\"modal-overlay\" id=\"new-page-modal\" style=\"display: none;\">
+    <div class=\"modal modal-sm\">
+        <div class=\"modal-header\">
+            <h3>Новая страница</h3>
+            <button class=\"modal-close\" id=\"new-page-modal-close\">&times;</button>
+        </div>
+        <div class=\"modal-body\">
+            <div class=\"form-group\">
+                <label>Название страницы</label>
+                <input type=\"text\" id=\"new-page-title-input\" class=\"form-input\" placeholder=\"Введите название...\" autofocus>
+            </div>
+        </div>
+        <div class=\"modal-footer\">
+            <button class=\"btn btn-secondary\" id=\"new-page-modal-cancel\">Отмена</button>
+            <button class=\"btn btn-primary\" id=\"new-page-modal-save\">Создать</button>
         </div>
     </div>
 </div>
@@ -646,7 +727,26 @@ document.addEventListener(\x27DOMContentLoaded\x27, function() {
     });
 
     document.getElementById(\x27new-page-btn\x27).addEventListener(\x27click\x27, function() {
-        createNewPage();
+        showNewPageModal();
+    });
+
+    document.getElementById(\x27new-page-modal-close\x27).addEventListener(\x27click\x27, function() {
+        closeNewPageModal();
+    });
+
+    document.getElementById(\x27new-page-modal-cancel\x27).addEventListener(\x27click\x27, function() {
+        closeNewPageModal();
+    });
+
+    document.getElementById(\x27new-page-modal-save\x27).addEventListener(\x27click\x27, function() {
+        confirmNewPage();
+    });
+
+    document.getElementById(\x27new-page-title-input\x27).addEventListener(\x27keydown\x27, function(e) {
+        if (e.key === \x27Enter\x27) {
+            e.preventDefault();
+            confirmNewPage();
+        }
     });
 
     document.getElementById(\x27modal-close\x27).addEventListener(\x27click\x27, function() {
@@ -722,12 +822,30 @@ function loadProjects() {
 // New Page
 // ==========================================
 
-function createNewPage() {
+function showNewPageModal() {
     if (!currentProjectId) return;
+    document.getElementById(\x27new-page-title-input\x27).value = \x27\x27;
+    document.getElementById(\x27new-page-modal\x27).style.display = \x27flex\x27;
+    setTimeout(function() {
+        document.getElementById(\x27new-page-title-input\x27).focus();
+    }, 100);
+}
+
+function closeNewPageModal() {
+    document.getElementById(\x27new-page-modal\x27).style.display = \x27none\x27;
+}
+
+function confirmNewPage() {
+    var title = document.getElementById(\x27new-page-title-input\x27).value.trim();
+    if (!title) {
+        document.getElementById(\x27new-page-title-input\x27).focus();
+        return;
+    }
+    closeNewPageModal();
     apiRequest(\x27/projects/\x27 + currentProjectId + \x27/pages\x27, \x27POST\x27, {
-        title: \x27Новая страница\x27
+        title: title
     }).then(function(response) {
-        openFullEditor(response.page.id);
+        window.location.href = \x27/page/\x27 + response.page.id;
     }).catch(function(xhr) {
         console.error(\x27Failed to create page:\x27, xhr);
     });

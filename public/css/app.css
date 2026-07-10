@@ -204,6 +204,37 @@ body {
     gap: 16px;
 }
 
+.new-page-bottom {
+    max-width: 900px;
+    margin: 24px auto 0;
+    display: flex;
+    justify-content: center;
+}
+
+.new-page-bottom .btn,
+.empty-add-task-btn {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    padding: 10px 24px;
+    font-size: 14px;
+    border-radius: var(--radius);
+    transition: all 0.2s;
+}
+
+.new-page-bottom .btn:hover,
+.empty-add-task-btn:hover {
+    color: var(--text);
+    border-color: var(--text-muted);
+    background: var(--bg-sidebar);
+}
+
+.empty-tasks-bottom {
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
 .loading-pages, .empty-state {
     text-align: center;
     padding: 60px 20px;
@@ -583,6 +614,10 @@ body {
     max-height: 80vh;
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-sm {
+    max-width: 420px;
 }
 
 .modal-header {

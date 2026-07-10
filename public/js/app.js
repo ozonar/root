@@ -266,7 +266,7 @@ function renderInlineTasks(pageTasks, container, pageId) {
     container.innerHTML = '';
 
     if (pageTasks.length === 0) {
-        container.innerHTML = '<div class="text-muted" style="text-align:center;padding:20px;">Нет задач</div>';
+        container.innerHTML = '<div class="empty-tasks-bottom"><button class="btn empty-add-task-btn" onclick="addNewTask(' + pageId + ')"><i class="fas fa-plus"></i> Задача</button></div>';
         return;
     }
 

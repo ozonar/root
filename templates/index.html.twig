@@ -14,9 +14,6 @@
             </select>
         </div>
         <div class="header-right">
-            <button id="new-page-btn" class="btn btn-sm btn-primary" title="Новая страница">
-                <i class="fas fa-plus"></i> Страница
-            </button>
             <span id="user-name" class="user-name"></span>
             <button id="logout-btn" class="btn btn-sm btn-outline" title="Выйти">
                 <i class="fas fa-sign-out-alt"></i>
@@ -29,25 +26,12 @@
         <div class="pages-grid" id="pages-grid">
             <div class="loading-pages">Загрузка...</div>
         </div>
-    </main>
-</div>
-
-<!-- Full Page Editor (hidden by default) -->
-<div id="full-editor" class="full-editor" style="display: none;">
-    <div class="full-editor-header">
-        <button id="back-to-main" class="btn btn-sm btn-outline">
-            <i class="fas fa-arrow-left"></i> Назад
-        </button>
-        <h2 id="full-page-title" contenteditable="true" class="page-title-editable"></h2>
-        <div class="editor-actions">
-            <button id="add-task-btn" class="btn btn-sm btn-primary" title="Добавить задачу">
-                <i class="fas fa-plus"></i> Задача
+        <div class="new-page-bottom">
+            <button id="new-page-btn" class="btn btn-primary" title="Новая страница">
+                <i class="fas fa-plus"></i> Страница
             </button>
         </div>
-    </div>
-    <div class="full-editor-body">
-        <div class="tasks-container" id="tasks-container"></div>
-    </div>
+    </main>
 </div>
 
 <!-- Task Modal -->
@@ -87,6 +71,26 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" id="modal-cancel">Отмена</button>
             <button class="btn btn-primary" id="modal-save">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- New Page Modal -->
+<div class="modal-overlay" id="new-page-modal" style="display: none;">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3>Новая страница</h3>
+            <button class="modal-close" id="new-page-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Название страницы</label>
+                <input type="text" id="new-page-title-input" class="form-input" placeholder="Введите название..." autofocus>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="new-page-modal-cancel">Отмена</button>
+            <button class="btn btn-primary" id="new-page-modal-save">Создать</button>
         </div>
     </div>
 </div>
@@ -143,17 +147,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    document.getElementById('back-to-main').addEventListener('click', function() {
-        closeFullEditor();
-    });
-
-    document.getElementById('add-task-btn').addEventListener('click', function() {
-        var container = document.getElementById('tasks-container');
-        addNewTask(parseInt(container.dataset.pageId));
-    });
-
     document.getElementById('new-page-btn').addEventListener('click', function() {
-        createNewPage();
+        showNewPageModal();
+    });
+
+    document.getElementById('new-page-modal-close').addEventListener('click', function() {
+        closeNewPageModal();
+    });
+
+    document.getElementById('new-page-modal-cancel').addEventListener('click', function() {
+        closeNewPageModal();
+    });
+
+    document.getElementById('new-page-modal-save').addEventListener('click', function() {
+        confirmNewPage();
+    });
+
+    document.getElementById('new-page-title-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmNewPage();
+        }
     });
 
     document.getElementById('modal-close').addEventListener('click', function() {
@@ -229,12 +243,30 @@ function loadProjects() {
 // New Page
 // ==========================================
 
-function createNewPage() {
+function showNewPageModal() {
     if (!currentProjectId) return;
+    document.getElementById('new-page-title-input').value = '';
+    document.getElementById('new-page-modal').style.display = 'flex';
+    setTimeout(function() {
+        document.getElementById('new-page-title-input').focus();
+    }, 100);
+}
+
+function closeNewPageModal() {
+    document.getElementById('new-page-modal').style.display = 'none';
+}
+
+function confirmNewPage() {
+    var title = document.getElementById('new-page-title-input').value.trim();
+    if (!title) {
+        document.getElementById('new-page-title-input').focus();
+        return;
+    }
+    closeNewPageModal();
     apiRequest('/projects/' + currentProjectId + '/pages', 'POST', {
-        title: 'Новая страница'
+        title: title
     }).then(function(response) {
-        openFullEditor(response.page.id);
+        window.location.href = '/page/' + response.page.id;
     }).catch(function(xhr) {
         console.error('Failed to create page:', xhr);
     });
@@ -314,28 +346,5 @@ function renderPagesGrid() {
     makeSortable();
 }
 
-// ==========================================
-// Full Page Editor
-// ==========================================
-
-function openFullEditor(pageId) {
-    document.getElementById('pages-grid').style.display = 'none';
-    document.getElementById('full-editor').style.display = 'block';
-    document.getElementById('tasks-container').dataset.pageId = pageId;
-
-    apiRequest('/pages/' + pageId).then(function(response) {
-        document.getElementById('full-page-title').textContent = response.page.title;
-        statuses = response.statuses || [];
-        renderInlineTasks(response.tasks || [], document.getElementById('tasks-container'), pageId);
-    }).catch(function(xhr) {
-        console.error('Failed to load page:', xhr);
-    });
-}
-
-function closeFullEditor() {
-    document.getElementById('full-editor').style.display = 'none';
-    document.getElementById('pages-grid').style.display = '';
-    loadMainPage();
-}
 </script>
 {% endblock %}

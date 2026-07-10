@@ -282,9 +282,9 @@ function loadPage() {
     });
 }
 
-window.reloadTasks = function(response) {
-    statuses = response.statuses || [];
-    renderInlineTasks(response.tasks || [], document.getElementById(\x27tasks-container\x27), PAGE_ID);
+window.reloadTasks = function(pageId, tasks) {
+    statuses = statuses;
+    renderInlineTasks(tasks || [], document.getElementById(\x27tasks-container\x27), PAGE_ID);
 };
 </script>
 ";
@@ -487,9 +487,9 @@ function loadPage() {
     });
 }
 
-window.reloadTasks = function(response) {
-    statuses = response.statuses || [];
-    renderInlineTasks(response.tasks || [], document.getElementById(\x27tasks-container\x27), PAGE_ID);
+window.reloadTasks = function(pageId, tasks) {
+    statuses = statuses;
+    renderInlineTasks(tasks || [], document.getElementById(\x27tasks-container\x27), PAGE_ID);
 };
 </script>
 {% endblock %}", "page.html.twig", "/work/checker/templates/page.html.twig");
