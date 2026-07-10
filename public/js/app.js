@@ -349,7 +349,7 @@ if (isHighPriority) {
             var html = text.innerHTML;
             if (txt === '' && (html === '' || html === '<br>' || html === '<br/>')) {
                 e.preventDefault();
-                handleTaskDeleteOrFinish(task.id, isCompleted, options);
+                handleTaskDeleteOrFinish(task.id, isCompleted, options, true);
             }
         }
     });
@@ -414,7 +414,10 @@ function buildInlineOptions(pageId) {
         },
         onDelete: function(taskId) {
             apiRequest('/tasks/' + taskId, 'DELETE').then(function() {
-                reloadPage(pageId);
+                var el = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+                if (el) {
+                    el.remove();
+                }
             });
         },
         onAddAfter: function(taskId) {
@@ -824,9 +827,9 @@ function showAssigneeMenu(x, y, task) {
 // Context Menu Helpers
 // ==========================================
 
-function handleTaskDeleteOrFinish(taskId, isCompleted, options) {
-    if (isCompleted) {
-        // If already completed, just delete
+function handleTaskDeleteOrFinish(taskId, isCompleted, options, forceDelete) {
+    if (forceDelete || isCompleted) {
+        // Force delete (Backspace on empty) or already completed — just delete
         if (options.onDelete) {
             options.onDelete(taskId);
         }
