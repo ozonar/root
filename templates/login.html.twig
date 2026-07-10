@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход | Checker</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/fontawesome/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body>
@@ -60,62 +60,77 @@
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
-$(function() {
+document.addEventListener('DOMContentLoaded', function() {
     // Переключение между формами
-    $('#show-register').on('click', function(e) {
+    document.getElementById('show-register').addEventListener('click', function(e) {
         e.preventDefault();
-        $('.auth-box').toggle();
+        var boxes = document.querySelectorAll('.auth-box');
+        boxes.forEach(function(box) { box.style.display = box.style.display === 'none' ? 'block' : 'none'; });
     });
-    $('#show-login').on('click', function(e) {
+    document.getElementById('show-login').addEventListener('click', function(e) {
         e.preventDefault();
-        $('.auth-box').toggle();
+        var boxes = document.querySelectorAll('.auth-box');
+        boxes.forEach(function(box) { box.style.display = box.style.display === 'none' ? 'block' : 'none'; });
     });
+
+    // Вспомогательная функция для AJAX
+    function apiFormRequest(url, data, successCallback, errorCallback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                successCallback(JSON.parse(xhr.responseText));
+            } else {
+                var err;
+                try { err = JSON.parse(xhr.responseText); } catch(e) { err = {}; }
+                errorCallback(err);
+            }
+        };
+        xhr.onerror = function() { errorCallback({}); };
+        xhr.send(JSON.stringify(data));
+    }
 
     // Логин
-    $('#login-form').on('submit', function(e) {
+    document.getElementById('login-form').addEventListener('submit', function(e) {
         e.preventDefault();
-        const email = $('#email').val();
-        const password = $('#password').val();
+        var email = document.getElementById('email').value;
+        var password = document.getElementById('password').value;
 
-        $.ajax({
-            url: '/api/login',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ email, password }),
-            success: function(response) {
+        apiFormRequest('/api/login', { email: email, password: password },
+            function(response) {
                 localStorage.setItem('auth_token', response.token);
                 window.location.href = '/';
             },
-            error: function(xhr) {
-                const err = xhr.responseJSON?.error || 'Ошибка входа';
-                $('#auth-error').text(err).show();
+            function(err) {
+                var msg = err.error || 'Ошибка входа';
+                var el = document.getElementById('auth-error');
+                el.textContent = msg;
+                el.style.display = 'block';
             }
-        });
+        );
     });
 
     // Регистрация
-    $('#register-form').on('submit', function(e) {
+    document.getElementById('register-form').addEventListener('submit', function(e) {
         e.preventDefault();
-        const email = $('#reg-email').val();
-        const name = $('#reg-name').val();
-        const password = $('#reg-password').val();
+        var email = document.getElementById('reg-email').value;
+        var name = document.getElementById('reg-name').value;
+        var password = document.getElementById('reg-password').value;
 
-        $.ajax({
-            url: '/api/register',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ email, name, password }),
-            success: function(response) {
+        apiFormRequest('/api/register', { email: email, name: name, password: password },
+            function(response) {
                 localStorage.setItem('auth_token', response.token);
                 window.location.href = '/';
             },
-            error: function(xhr) {
-                const err = xhr.responseJSON?.error || 'Ошибка регистрации';
-                $('#reg-error').text(err).show();
+            function(err) {
+                var msg = err.error || 'Ошибка регистрации';
+                var el = document.getElementById('reg-error');
+                el.textContent = msg;
+                el.style.display = 'block';
             }
-        });
+        );
     });
 });
 </script>
