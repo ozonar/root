@@ -68,23 +68,11 @@
     </div>
 </div>
 
-<!-- Context Menu -->
-<div class="context-menu" id="context-menu" style="display: none;">
-    <ul class="context-menu-list">
-        <li data-action="add-child"><i class="fas fa-plus"></i> Добавить подзадачу</li>
-        <li data-action="add-above"><i class="fas fa-arrow-up"></i> Добавить сверху</li>
-        <li data-action="add-below"><i class="fas fa-arrow-down"></i> Добавить снизу</li>
-        <li class="divider"></li>
-        <li data-action="edit"><i class="fas fa-edit"></i> Редактировать</li>
-        <li data-action="set-status"><i class="fas fa-check-circle"></i> Установить статус</li>
-        <li data-action="set-priority"><i class="fas fa-exclamation-triangle"></i> Приоритет</li>
-        <li class="divider"></li>
-        <li data-action="delete" class="danger"><i class="fas fa-trash"></i> Удалить</li>
-    </ul>
-</div>
+{% include '_context_menus.html.twig' %}
 {% endblock %}
 
 {% block javascripts %}
+{% include '_init_scripts.html.twig' %}
 <script>
 const PAGE_ID = {{ pageId }};
 
@@ -105,28 +93,13 @@ document.addEventListener('DOMContentLoaded', function() {
         addNewTask(PAGE_ID);
     });
 
-    document.getElementById('modal-close').addEventListener('click', function() {
-        closeModal();
-    });
-
-    document.getElementById('modal-cancel').addEventListener('click', function() {
-        closeModal();
-    });
-
-    document.getElementById('modal-save').addEventListener('click', function() {
-        saveTaskFromModal();
-    });
-
-    document.addEventListener('click', function() {
-        document.getElementById('context-menu').style.display = 'none';
-    });
-
-    document.querySelectorAll('#context-menu li[data-action]').forEach(function(li) {
-        li.addEventListener('click', function(e) {
-            e.stopPropagation();
-            handleContextAction(li.dataset.action);
-            document.getElementById('context-menu').style.display = 'none';
-        });
+    // Load project users for assignee menu
+    apiRequest('/me').then(function(meResponse) {
+        var projectId = meResponse.user.currentProjectId;
+        if (projectId) {
+            currentProjectId = projectId;
+            loadProjectUsers(projectId);
+        }
     });
 
     // Auto-save page title on input

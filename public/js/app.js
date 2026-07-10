@@ -50,7 +50,9 @@ function formatTooltipDate(dateStr) {
 
 const API_BASE = '/api';
 let currentTaskId = null;
+let currentProjectId = null;
 let statuses = [];
+let projectUsers = [];
 let saveTimers = {};
 
 // ==========================================
@@ -127,6 +129,32 @@ window.reloadTasks = function(pageId, tasks) {
 };
 
 // ==========================================
+// Load project users
+// ==========================================
+
+function loadProjectStatuses(projectId) {
+    if (!projectId) return Promise.resolve([]);
+    return apiRequest('/projects/' + projectId + '/statuses').then(function(response) {
+        statuses = response.statuses || [];
+        return statuses;
+    }).catch(function() {
+        statuses = [];
+        return [];
+    });
+}
+
+function loadProjectUsers(projectId) {
+    if (!projectId) return Promise.resolve([]);
+    return apiRequest('/projects/' + projectId + '/users').then(function(response) {
+        projectUsers = response.users || [];
+        return projectUsers;
+    }).catch(function() {
+        projectUsers = [];
+        return [];
+    });
+}
+
+// ==========================================
 // Tasks Tree (universal)
 // options: { pageId, onToggleStatus, onAddChild, onDelete, onAddAfter }
 // All callbacks receive (taskId) or (taskId, completed).
@@ -155,27 +183,58 @@ function renderTaskItem(task, level, taskList, options) {
     dragHandle.innerHTML = '<i class="fas fa-grip-vertical"></i>';
     row.appendChild(dragHandle);
 
-    // Checkbox
-    var checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
+    // Checkbox with status icon
+    var checkbox = document.createElement('span');
     checkbox.className = 'task-checkbox';
-    if (isCompleted) checkbox.checked = true;
-    checkbox.addEventListener('change', function() {
-        options.onToggleStatus(task.id, checkbox.checked);
+    if (task.status === 'finished') {
+        checkbox.classList.add('checked');
+        checkbox.innerHTML = '<i class="fas fa-check"></i>';
+    } else if (task.status && task.status !== 'processed') {
+        checkbox.classList.add('custom-status');
+        var statusIcon = task.statusIcon || 'fa-circle';
+        checkbox.innerHTML = '<i class="fas ' + statusIcon + '"></i>';
+    } else {
+        // processed or no status — empty square
+        checkbox.classList.add('empty');
+    }
+    // ЛКМ — переключение статуса processed/finished
+    checkbox.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (checkbox.classList.contains('checked')) {
+            checkbox.className = 'task-checkbox empty';
+            options.onToggleStatus(task.id, false);
+        } else {
+            checkbox.className = 'task-checkbox checked';
+            checkbox.innerHTML = '<i class="fas fa-check"></i>';
+            options.onToggleStatus(task.id, true);
+        }
+    });
+    // ПКМ на чекбоксе — меню статусов
+    checkbox.addEventListener('contextmenu', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        currentTaskId = task.id;
+        showStatusContextMenu(e.pageX, e.pageY, task);
     });
     row.appendChild(checkbox);
+// Priority — add class to row instead of icon
+if (isHighPriority) {
+    row.classList.add('priority-high');
+}
 
-    // Priority icon
-    var prioritySpan = document.createElement('span');
-    prioritySpan.className = 'task-priority' + (isHighPriority ? ' high' : '');
-    prioritySpan.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-    row.appendChild(prioritySpan);
 
     // Text
     var text = document.createElement('div');
     text.className = 'task-text' + (isCompleted ? ' completed' : '');
     text.contentEditable = 'true';
     text.innerHTML = task.text || '';
+    // ПКМ на тексте — меню действий
+    text.addEventListener('contextmenu', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        currentTaskId = task.id;
+        showTaskContextMenu(e.pageX, e.pageY, task);
+    });
     row.appendChild(text);
 
     // Status badge
@@ -185,6 +244,24 @@ function renderTaskItem(task, level, taskList, options) {
         badge.textContent = task.statusName || task.status;
         row.appendChild(badge);
     }
+
+    // Assignee
+    var assigneeSpan = document.createElement('span');
+    assigneeSpan.className = 'task-assignee';
+    var assigneeName = task.assigneeName || task.assignee || '';
+    if (assigneeName) {
+        assigneeSpan.textContent = assigneeName;
+    } else {
+        assigneeSpan.innerHTML = '<span class="task-assignee-empty"><i class="fas fa-user"></i></span>';
+    }
+    assigneeSpan.title = 'Сменить исполнителя';
+    // ЛКМ по исполнителю — меню выбора пользователя
+    assigneeSpan.addEventListener('click', function(e) {
+        e.stopPropagation();
+        currentTaskId = task.id;
+        showAssigneeMenu(e.pageX, e.pageY, task);
+    });
+    row.appendChild(assigneeSpan);
 
     // Actions
     var actions = document.createElement('div');
@@ -258,12 +335,6 @@ function renderTaskItem(task, level, taskList, options) {
                 handleTaskDeleteOrFinish(task.id, isCompleted, options);
             }
         }
-    });
-
-    row.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        currentTaskId = task.id;
-        showContextMenu(e.pageX, e.pageY, task);
     });
 
     row.addEventListener('dblclick', function() {
@@ -478,11 +549,138 @@ function moveTask(taskId, parentId, position) {
 }
 
 // ==========================================
-// Context Menu
+// Context Menu: Statuses (on checkbox right-click)
 // ==========================================
 
-function showContextMenu(x, y, task) {
-    var menu = document.getElementById('context-menu');
+function showStatusContextMenu(x, y, task) {
+    var menu = document.getElementById('context-menu-status');
+    if (!menu) return;
+
+    // Build status list
+    var list = menu.querySelector('.context-menu-list');
+    list.innerHTML = '';
+
+    statuses.forEach(function(s) {
+        var li = document.createElement('li');
+        li.dataset.status = s.systemName;
+        if (s.systemName === 'processed') {
+            li.innerHTML = '<span class="menu-checkbox-icon empty"></span> ' + s.name;
+        } else if (s.systemName === 'finished') {
+            li.innerHTML = '<span class="menu-checkbox-icon checked"><i class="fas fa-check"></i></span> ' + s.name;
+        } else {
+            li.innerHTML = '<i class="fas ' + (s.icon || 'fa-circle') + '"></i> ' + s.name;
+        }
+        if (task.status === s.systemName) {
+            li.classList.add('selected');
+        }
+        li.addEventListener('click', function(e) {
+            e.stopPropagation();
+            setTaskStatus(currentTaskId, s.systemName);
+            hideAllContextMenus();
+        });
+        list.appendChild(li);
+    });
+
+    // Divider
+    var divider = document.createElement('li');
+    divider.className = 'divider';
+    list.appendChild(divider);
+
+    // Add new status button
+    var addLi = document.createElement('li');
+    addLi.className = 'add-status-btn';
+    addLi.innerHTML = '<i class="fas fa-plus"></i> Добавить новый статус';
+    addLi.addEventListener('click', function(e) {
+        e.stopPropagation();
+        hideAllContextMenus();
+        showNewStatusModal();
+    });
+    list.appendChild(addLi);
+
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.style.display = 'block';
+
+    // Adjust position
+    var menuWidth = menu.offsetWidth;
+    var menuHeight = menu.offsetHeight;
+    var winWidth = window.innerWidth;
+    var winHeight = window.innerHeight;
+    if (x + menuWidth > winWidth) menu.style.left = (winWidth - menuWidth - 10) + 'px';
+    if (y + menuHeight > winHeight) menu.style.top = (winHeight - menuHeight - 10) + 'px';
+}
+
+// ==========================================
+// Context Menu: Task actions (on text right-click)
+// ==========================================
+
+function showTaskContextMenu(x, y, task) {
+    var menu = document.getElementById('context-menu-task');
+    if (!menu) return;
+
+    var list = menu.querySelector('.context-menu-list');
+    list.innerHTML = '';
+
+    // Priority
+    var priorityLi = document.createElement('li');
+    priorityLi.dataset.action = 'set-priority';
+    priorityLi.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Приоритет';
+    if (task.isPriority) {
+        priorityLi.classList.add('selected');
+    }
+    priorityLi.addEventListener('click', function(e) {
+        e.stopPropagation();
+        togglePriority(currentTaskId);
+        hideAllContextMenus();
+    });
+    list.appendChild(priorityLi);
+
+    // Divider
+    var divider1 = document.createElement('li');
+    divider1.className = 'divider';
+    list.appendChild(divider1);
+
+    // Edit
+    var editLi = document.createElement('li');
+    editLi.dataset.action = 'edit';
+    editLi.innerHTML = '<i class="fas fa-edit"></i> Редактировать';
+    editLi.addEventListener('click', function(e) {
+        e.stopPropagation();
+        openTaskModal(currentTaskId);
+        hideAllContextMenus();
+    });
+    list.appendChild(editLi);
+
+    // Divider
+    var divider2 = document.createElement('li');
+    divider2.className = 'divider';
+    list.appendChild(divider2);
+
+    // Delete
+    var deleteLi = document.createElement('li');
+    deleteLi.dataset.action = 'delete';
+    deleteLi.className = 'danger';
+    deleteLi.innerHTML = '<i class="fas fa-trash"></i> Удалить';
+    deleteLi.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var el = document.querySelector('.task-item[data-task-id="' + currentTaskId + '"]');
+        var pageId = parseInt(el.dataset.pageId);
+        handleTaskDeleteOrFinish(currentTaskId, false, {
+            pageId: pageId,
+            onToggleStatus: function(taskId, completed) {
+                var newStatus = completed ? 'finished' : 'processed';
+                apiRequest('/tasks/' + taskId + '/status', 'PUT', { status: newStatus }).then(function() {
+                    reloadPage(pageId);
+                });
+            },
+            onDelete: function(taskId) {
+                apiRequest('/tasks/' + taskId, 'DELETE').then(function() { reloadPage(pageId); });
+            }
+        });
+        hideAllContextMenus();
+    });
+    list.appendChild(deleteLi);
+
     menu.style.left = x + 'px';
     menu.style.top = y + 'px';
     menu.style.display = 'block';
@@ -495,78 +693,162 @@ function showContextMenu(x, y, task) {
     if (y + menuHeight > winHeight) menu.style.top = (winHeight - menuHeight - 10) + 'px';
 }
 
-function handleContextAction(action) {
-    var el = document.querySelector('.task-item[data-task-id="' + currentTaskId + '"]');
-    if (!el) return;
+// ==========================================
+// Assignee Menu (click on assignee name)
+// ==========================================
 
-    var pageId = parseInt(el.dataset.pageId);
+function showAssigneeMenu(x, y, task) {
+    var menu = document.getElementById('context-menu-assignee');
+    if (!menu) return;
 
-    switch (action) {
-        case 'add-child':
-            apiRequest('/pages/' + pageId + '/tasks', 'POST', {
-                text: '', parentId: currentTaskId, order: 0
-            }).then(function() { reloadPage(pageId); });
-            break;
-        case 'add-above':
-            apiRequest('/pages/' + pageId + '/tasks', 'POST', {
-                text: '', parentId: null, order: 999
-            }).then(function() { reloadPage(pageId); });
-            break;
-        case 'add-below':
-            apiRequest('/pages/' + pageId + '/tasks', 'POST', {
-                text: '', parentId: null, order: 999
-            }).then(function() { reloadPage(pageId); });
-            break;
-        case 'edit':
-            openTaskModal(currentTaskId);
-            break;
-        case 'set-status':
-            toggleTaskStatusSimple(currentTaskId);
-            break;
-        case 'set-priority':
-            togglePriority(currentTaskId);
-            break;
-        case 'delete':
-            handleTaskDeleteOrFinish(currentTaskId, false, {
-                pageId: pageId,
-                onToggleStatus: function(taskId, completed) {
-                    var newStatus = completed ? 'finished' : 'processed';
-                    apiRequest('/tasks/' + taskId + '/status', 'PUT', { status: newStatus }).then(function() {
-                        reloadPage(pageId);
-                    });
-                },
-                onDelete: function(taskId) {
-                    apiRequest('/tasks/' + taskId, 'DELETE').then(function() { reloadPage(pageId); });
-                }
-            });
-            break;
+    var list = menu.querySelector('.context-menu-list');
+    list.innerHTML = '';
+
+    // "No assignee" option
+    var noneLi = document.createElement('li');
+    noneLi.innerHTML = '<i class="fas fa-user-slash"></i> Без исполнителя';
+    if (!task.assignee) {
+        noneLi.classList.add('selected');
     }
+    noneLi.addEventListener('click', function(e) {
+        e.stopPropagation();
+        setTaskAssignee(currentTaskId, null);
+        hideAllContextMenus();
+    });
+    list.appendChild(noneLi);
+
+    // Divider
+    var divider = document.createElement('li');
+    divider.className = 'divider';
+    list.appendChild(divider);
+
+    // Project users
+    projectUsers.forEach(function(u) {
+        var li = document.createElement('li');
+        li.innerHTML = '<i class="fas fa-user"></i> ' + (u.name || u.email);
+        if (task.assignee === u.email) {
+            li.classList.add('selected');
+        }
+        li.addEventListener('click', function(e) {
+            e.stopPropagation();
+            setTaskAssignee(currentTaskId, u.email);
+            hideAllContextMenus();
+        });
+        list.appendChild(li);
+    });
+
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.style.display = 'block';
+
+    var menuWidth = menu.offsetWidth;
+    var menuHeight = menu.offsetHeight;
+    var winWidth = window.innerWidth;
+    var winHeight = window.innerHeight;
+    if (x + menuWidth > winWidth) menu.style.left = (winWidth - menuWidth - 10) + 'px';
+    if (y + menuHeight > winHeight) menu.style.top = (winHeight - menuHeight - 10) + 'px';
 }
+
+// ==========================================
+// Context Menu Helpers
+// ==========================================
 
 function handleTaskDeleteOrFinish(taskId, isCompleted, options) {
     if (isCompleted) {
-        // Уже завершена — удаляем без подтверждения
-        options.onDelete(taskId);
+        // If already completed, just delete
+        if (options.onDelete) {
+            options.onDelete(taskId);
+        }
     } else {
-        // Не завершена — устанавливаем статус finished
-        options.onToggleStatus(taskId, true);
+        // Mark as finished first
+        if (options.onToggleStatus) {
+            options.onToggleStatus(taskId, true);
+        }
     }
 }
 
-function toggleTaskStatusSimple(taskId) {
+function hideAllContextMenus() {
+    var menus = document.querySelectorAll('.context-menu');
+    menus.forEach(function(m) { m.style.display = 'none'; });
+}
+
+function setTaskStatus(taskId, statusSystemName) {
     var el = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
     var pageId = parseInt(el.dataset.pageId);
-    var isCompleted = el.querySelector('.task-checkbox').checked;
-    var nextStatus = isCompleted ? 'processed' : 'finished';
-    apiRequest('/tasks/' + taskId + '/status', 'PUT', { status: nextStatus }).then(function() {
+    apiRequest('/tasks/' + taskId + '/status', 'PUT', { status: statusSystemName }).then(function() {
         reloadPage(pageId);
     });
 }
 
+function setTaskAssignee(taskId, email) {
+    var el = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+    var pageId = parseInt(el.dataset.pageId);
+    apiRequest('/tasks/' + taskId, 'PUT', { assignee: email }).then(function() {
+        reloadPage(pageId);
+    });
+}
+
+// ==========================================
+// New Status Modal
+// ==========================================
+
+function showNewStatusModal() {
+    var modal = document.getElementById('new-status-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('new-status-name-input').value = '';
+        setTimeout(function() {
+            document.getElementById('new-status-name-input').focus();
+        }, 100);
+    }
+}
+
+function closeNewStatusModal() {
+    document.getElementById('new-status-modal').style.display = 'none';
+}
+
+function confirmNewStatus() {
+    var name = document.getElementById('new-status-name-input').value.trim();
+    if (!name) return;
+
+    var iconInput = document.getElementById('new-status-icon-input');
+    var selectedIcon = iconInput.querySelector('.icon-option.selected');
+    var icon = selectedIcon ? selectedIcon.dataset.value : 'fa-circle';
+
+    closeNewStatusModal();
+
+    apiRequest('/statuses', 'POST', {
+        name: name,
+        systemName: name,
+        icon: icon,
+        projectId: currentProjectId
+    }).then(function() {
+        // Reload current page to get updated statuses
+        var el = document.querySelector('.task-item[data-task-id="' + currentTaskId + '"]');
+        if (el) {
+            var pageId = parseInt(el.dataset.pageId);
+            reloadPage(pageId);
+        }
+    });
+}
+
+// Initialize icon select behavior
+document.addEventListener('click', function(e) {
+    var iconOption = e.target.closest('.icon-option');
+    if (iconOption) {
+        var container = iconOption.closest('.icon-select');
+        container.querySelectorAll('.icon-option').forEach(function(opt) {
+            opt.classList.remove('selected');
+        });
+        iconOption.classList.add('selected');
+    }
+});
+
 function togglePriority(taskId) {
     var el = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
     var pageId = parseInt(el.dataset.pageId);
-    var isPriority = el.querySelector('.task-priority').classList.contains('high');
+    var row = el.querySelector('.task-row');
+    var isPriority = row.classList.contains('priority-high');
     apiRequest('/tasks/' + taskId, 'PUT', { isPriority: !isPriority }).then(function() {
         reloadPage(pageId);
     });
@@ -589,12 +871,12 @@ function openTaskModal(taskId) {
     var currentStatus = 'processed';
 
     var checkbox = el.querySelector('.task-checkbox');
-    if (checkbox && checkbox.checked) {
+    if (checkbox && checkbox.classList.contains('checked')) {
         currentStatus = 'finished';
     }
 
-    var priorityEl = el.querySelector('.task-priority');
-    if (priorityEl && priorityEl.classList.contains('high')) {
+    var row = el.querySelector('.task-row');
+    if (row && row.classList.contains('priority-high')) {
         isPriority = true;
     }
 

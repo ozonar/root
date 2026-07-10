@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Page;
 use App\Entity\Task;
 use App\Entity\Status;
+use App\Service\StatusService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,6 +18,7 @@ class PageController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
+        private StatusService $statusService,
     ) {
     }
 
@@ -32,9 +34,10 @@ class PageController extends AbstractController
             ->getRepository(Task::class)
             ->findBy(['page' => $page], ['order' => 'ASC']);
 
+        $project = $page->getProject();
         $statuses = $this->entityManager
             ->getRepository(Status::class)
-            ->findBy(['active' => true]);
+            ->findBy(['project' => $project, 'active' => true]);
 
         $tasksResult = [];
         foreach ($tasks as $task) {
@@ -98,6 +101,7 @@ class PageController extends AbstractController
         $task->setText($data['text'] ?? 'Новая задача');
         $task->setOrder($data['order'] ?? 0);
         $task->setCreatedBy($this->getUser());
+        $task->setAssignee($this->getUser());
 
         if (isset($data['parentId'])) {
             $parent = $this->entityManager->getRepository(Task::class)->find($data['parentId']);
@@ -122,10 +126,12 @@ class PageController extends AbstractController
             'description' => $task->getDescription(),
             'status' => $task->getStatus()?->getSystemName(),
             'statusName' => $task->getStatus()?->getName(),
+            'statusIcon' => $task->getStatus()?->getIcon(),
             'order' => $task->getOrder(),
             'parentId' => $task->getParent()?->getId(),
             'isPriority' => $task->isPriority(),
             'assignee' => $task->getAssignee()?->getEmail(),
+            'assigneeName' => $task->getAssignee()?->getName(),
             'createdAt' => $task->getCreatedAt()->format('c'),
         ];
     }

@@ -16,15 +16,15 @@ class Status
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 100, unique: true)]
+    #[ORM\Column(length: 100)]
     private ?string $systemName = null;
 
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'statuses')]
+    #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'statuses')]
     #[ORM\JoinColumn(nullable: true)]
-    private ?User $user = null;
+    private ?Project $project = null;
 
     #[ORM\Column]
     private bool $active = true;
@@ -71,14 +71,14 @@ class Status
         return $this;
     }
 
-    public function getUser(): ?User
+    public function getProject(): ?Project
     {
-        return $this->user;
+        return $this->project;
     }
 
-    public function setUser(?User $user): static
+    public function setProject(?Project $project): static
     {
-        $this->user = $user;
+        $this->project = $project;
         return $this;
     }
 

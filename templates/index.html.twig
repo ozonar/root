@@ -1,13 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Checker{% endblock %}
+{% block title %}Root{% endblock %}
 
 {% block body %}
 <div id="app">
     <!-- Header -->
     <header class="header">
         <div class="header-left">
-            <a href="/" class="header-title">Checker</a>
+            <a href="/" class="header-title">Root</a>
         </div>
         <div class="header-center">
             <select id="project-selector" class="project-selector">
@@ -95,25 +95,12 @@
     </div>
 </div>
 
-<!-- Context Menu -->
-<div class="context-menu" id="context-menu" style="display: none;">
-    <ul class="context-menu-list">
-        <li data-action="add-child"><i class="fas fa-plus"></i> Добавить подзадачу</li>
-        <li data-action="add-above"><i class="fas fa-arrow-up"></i> Добавить сверху</li>
-        <li data-action="add-below"><i class="fas fa-arrow-down"></i> Добавить снизу</li>
-        <li class="divider"></li>
-        <li data-action="edit"><i class="fas fa-edit"></i> Редактировать</li>
-        <li data-action="set-status"><i class="fas fa-check-circle"></i> Установить статус</li>
-        <li data-action="set-priority"><i class="fas fa-exclamation-triangle"></i> Приоритет</li>
-        <li class="divider"></li>
-        <li data-action="delete" class="danger"><i class="fas fa-trash"></i> Удалить</li>
-    </ul>
-</div>
+{% include '_context_menus.html.twig' %}
 {% endblock %}
 
 {% block javascripts %}
+{% include '_init_scripts.html.twig' %}
 <script>
-let currentProjectId = null;
 let pages = [];
 
 // ==========================================
@@ -143,6 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('project-selector').addEventListener('change', function() {
         currentProjectId = parseInt(this.value);
         if (currentProjectId) {
+            loadProjectUsers(currentProjectId);
+            loadProjectStatuses(currentProjectId);
             loadMainPage();
         }
     });
@@ -168,30 +157,6 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             confirmNewPage();
         }
-    });
-
-    document.getElementById('modal-close').addEventListener('click', function() {
-        closeModal();
-    });
-
-    document.getElementById('modal-cancel').addEventListener('click', function() {
-        closeModal();
-    });
-
-    document.getElementById('modal-save').addEventListener('click', function() {
-        saveTaskFromModal();
-    });
-
-    document.addEventListener('click', function() {
-        document.getElementById('context-menu').style.display = 'none';
-    });
-
-    document.querySelectorAll('#context-menu li[data-action]').forEach(function(li) {
-        li.addEventListener('click', function(e) {
-            e.stopPropagation();
-            handleContextAction(li.dataset.action);
-            document.getElementById('context-menu').style.display = 'none';
-        });
     });
 
     // Auto-save page title on input (delegated)
@@ -232,6 +197,7 @@ function loadProjects() {
         if (response.currentProjectId) {
             selector.value = response.currentProjectId;
             currentProjectId = response.currentProjectId;
+            loadProjectUsers(currentProjectId);
             loadMainPage();
         }
     }).catch(function(xhr) {
@@ -278,6 +244,8 @@ function confirmNewPage() {
 
 function loadMainPage() {
     if (!currentProjectId) return;
+
+    loadProjectStatuses(currentProjectId);
 
     apiRequest('/projects/' + currentProjectId + '/pages').then(function(response) {
         pages = response.pages;

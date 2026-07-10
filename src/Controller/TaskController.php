@@ -54,14 +54,16 @@ class TaskController extends AbstractController
             $task->setParent($parent);
         }
         if (isset($data['isPriority'])) {
-            $task->setIsPriority((bool) $data['isPriority']);
+            $task->setPriority((bool) $data['isPriority']);
         }
-        if (isset($data['assignee']) && $data['assignee']) {
-            $assignee = $this->entityManager->getRepository(User::class)
-                ->findOneBy(['email' => $data['assignee']]);
-            $task->setAssignee($assignee);
-        } elseif (isset($data['assignee'])) {
-            $task->setAssignee(null);
+        if (array_key_exists('assignee', $data)) {
+            if ($data['assignee']) {
+                $assignee = $this->entityManager->getRepository(User::class)
+                    ->findOneBy(['email' => $data['assignee']]);
+                $task->setAssignee($assignee);
+            } else {
+                $task->setAssignee(null);
+            }
         }
 
         $task->setUpdatedBy($this->getUser());
@@ -194,9 +196,11 @@ class TaskController extends AbstractController
             'description' => $task->getDescription(),
             'status' => $task->getStatus()?->getSystemName(),
             'statusName' => $task->getStatus()?->getName(),
+            'statusIcon' => $task->getStatus()?->getIcon(),
             'isPriority' => $task->isPriority(),
             'order' => $task->getOrder(),
             'assignee' => $task->getAssignee()?->getEmail(),
+            'assigneeName' => $task->getAssignee()?->getName(),
             'createdAt' => $task->getCreatedAt()->format('c'),
             'updatedAt' => $task->getUpdatedAt()->format('c'),
         ];

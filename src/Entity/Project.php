@@ -36,10 +36,14 @@ class Project
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: Page::class, cascade: ['persist', 'remove'])]
     private Collection $pages;
 
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Status::class, cascade: ['persist', 'remove'])]
+    private Collection $statuses;
+
     public function __construct()
     {
         $this->userProjects = new ArrayCollection();
         $this->pages = new ArrayCollection();
+        $this->statuses = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -100,5 +104,13 @@ class Project
     public function getPages(): Collection
     {
         return $this->pages;
+    }
+
+    /**
+     * @return Collection<int, Status>
+     */
+    public function getStatuses(): Collection
+    {
+        return $this->statuses;
     }
 }

@@ -81,7 +81,7 @@ class CreateUserCommand extends Command
 
         $user->setCurrentProject($project);
 
-        $this->statusService->createDefaultStatuses($user);
+        $this->statusService->createDefaultStatuses($project);
 
         $this->entityManager->flush();
 

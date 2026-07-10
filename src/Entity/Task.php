@@ -24,7 +24,7 @@ class Task
     #[ORM\JoinColumn(nullable: true)]
     private ?Status $status = null;
 
-    #[ORM\ManyToOne(targetEntity: Task::class)]
+    #[ORM\ManyToOne(targetEntity: Task::class, inversedBy: 'children')]
     #[ORM\JoinColumn(name: 'parent_id', referencedColumnName: 'id', nullable: true)]
     private ?Task $parent = null;
 

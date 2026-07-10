@@ -1,0 +1,68 @@
+<script>
+// ==========================================
+// Shared initialization for context menus and modals
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Hide all context menus on any click
+    document.addEventListener('click', function() {
+        hideAllContextMenus();
+    });
+
+    // Close context menus on escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            hideAllContextMenus();
+        }
+    });
+
+    // New status modal handlers
+    var newStatusClose = document.getElementById('new-status-modal-close');
+    if (newStatusClose) {
+        newStatusClose.addEventListener('click', function() {
+            closeNewStatusModal();
+        });
+    }
+    var newStatusCancel = document.getElementById('new-status-modal-cancel');
+    if (newStatusCancel) {
+        newStatusCancel.addEventListener('click', function() {
+            closeNewStatusModal();
+        });
+    }
+    var newStatusSave = document.getElementById('new-status-modal-save');
+    if (newStatusSave) {
+        newStatusSave.addEventListener('click', function() {
+            confirmNewStatus();
+        });
+    }
+    var newStatusInput = document.getElementById('new-status-name-input');
+    if (newStatusInput) {
+        newStatusInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmNewStatus();
+            }
+        });
+    }
+
+    // Modal handlers
+    var modalClose = document.getElementById('modal-close');
+    if (modalClose) {
+        modalClose.addEventListener('click', function() {
+            closeModal();
+        });
+    }
+    var modalCancel = document.getElementById('modal-cancel');
+    if (modalCancel) {
+        modalCancel.addEventListener('click', function() {
+            closeModal();
+        });
+    }
+    var modalSave = document.getElementById('modal-save');
+    if (modalSave) {
+        modalSave.addEventListener('click', function() {
+            saveTaskFromModal();
+        });
+    }
+});
+</script>

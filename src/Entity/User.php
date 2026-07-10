@@ -40,9 +40,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Page::class, cascade: ['persist', 'remove'])]
     private Collection $pages;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Status::class, cascade: ['persist', 'remove'])]
-    private Collection $statuses;
-
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $name = null;
 
@@ -162,14 +159,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getPages(): Collection
     {
         return $this->pages;
-    }
-
-    /**
-     * @return Collection<int, Status>
-     */
-    public function getStatuses(): Collection
-    {
-        return $this->statuses;
     }
 
     public function getName(): ?string
