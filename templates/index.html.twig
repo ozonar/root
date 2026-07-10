@@ -302,7 +302,8 @@ function renderPagesGrid() {
     var expandedCount = 0;
 
     pages.forEach(function(page) {
-        var editedAt = page.editedAt ? new Date(page.editedAt) : new Date(page.createdAt);
+        var dateStr = page.editedAt || page.createdAt;
+        var editedAt = dateStr ? new Date(dateStr) : new Date();
         var isRecent = editedAt >= twoWeeksAgo;
         var shouldExpand = isRecent && expandedCount < 3;
 
@@ -322,10 +323,10 @@ function renderPagesGrid() {
         titleLink.textContent = page.title;
         header.appendChild(titleLink);
 
-        var dateStr = editedAt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
         var dateSpan = document.createElement('span');
         dateSpan.className = 'page-card-date';
-        dateSpan.textContent = dateStr;
+        dateSpan.textContent = formatRelativeTime(dateStr);
+        dateSpan.title = formatTooltipDate(dateStr);
         header.appendChild(dateSpan);
 
         card.appendChild(header);

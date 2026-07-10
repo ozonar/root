@@ -2,6 +2,52 @@
    Checker App - Shared JavaScript
    ========================================== */
 
+// ==========================================
+// Relative time formatting (dayjs)
+// ==========================================
+
+function formatRelativeTime(dateStr) {
+    var date = dayjs(dateStr);
+    var now = dayjs();
+    var diffMinutes = now.diff(date, 'minute');
+    var diffHours = now.diff(date, 'hour');
+    var diffDays = now.diff(date, 'day');
+    var diffMonths = now.diff(date, 'month');
+    var diffYears = now.diff(date, 'year');
+
+    var relative;
+    if (diffMinutes < 1) {
+        relative = 'только что';
+    } else if (diffMinutes < 60) {
+        relative = date.fromNow();
+    } else if (diffHours < 24) {
+        relative = date.fromNow();
+    } else if (diffDays < 7) {
+        relative = date.fromNow();
+    } else if (diffMonths < 1) {
+        relative = diffDays + ' ' + pluralize(diffDays, ['день', 'дня', 'дней']) + ' назад';
+    } else if (diffYears < 1) {
+        relative = date.fromNow();
+    } else {
+        relative = date.fromNow();
+    }
+
+    return relative;
+}
+
+function pluralize(count, forms) {
+    var mod100 = count % 100;
+    var mod10 = count % 10;
+    if (mod100 >= 11 && mod100 <= 19) return forms[2];
+    if (mod10 === 1) return forms[0];
+    if (mod10 >= 2 && mod10 <= 4) return forms[1];
+    return forms[2];
+}
+
+function formatTooltipDate(dateStr) {
+    return dayjs(dateStr).format('D MMMM YYYY, HH:mm');
+}
+
 const API_BASE = '/api';
 let currentTaskId = null;
 let statuses = [];

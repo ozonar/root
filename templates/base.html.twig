@@ -11,6 +11,13 @@
 <body>
     {% block body %}{% endblock %}
 
+    <script src="{{ asset('js/lib/dayjs.min.js') }}"></script>
+    <script src="{{ asset('js/lib/dayjs-ru.js') }}"></script>
+    <script src="{{ asset('js/lib/dayjs-relativeTime.js') }}"></script>
+    <script>
+        dayjs.extend(dayjs_plugin_relativeTime);
+        dayjs.locale('ru');
+    </script>
     <script src="{{ asset('js/app.js') }}?v={{ random() }}"></script>
     {% block javascripts %}{% endblock %}
 </body>
