@@ -423,8 +423,13 @@ body {
     position: relative;
 }
 
-.task-row:hover {
-    background: rgba(79,70,229,0.04);
+.task-row:hover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.06);
+    border-radius: inherit;
+    pointer-events: none;
 }
 
 .task-row:hover .task-actions {
@@ -531,6 +536,13 @@ body {
         #fef2f2 0 10px,
         #fce8e8 10px 20px
     );
+}
+
+/* Selection inside priority-high — keep the striped bg visible */
+.priority-high ::selection,
+.priority-high::selection {
+    background: rgba(239, 68, 68, 0.3);
+    color: inherit;
 }
 
 .task-status-badge {
