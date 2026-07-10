@@ -107,8 +107,22 @@ function reloadPage(pageId) {
 function addNewTask(pageId) {
     apiRequest('/pages/' + pageId + '/tasks', 'POST', {
         text: '', parentId: null, order: 999
-    }).then(function() {
-        reloadPage(pageId);
+    }).then(function(response) {
+        var task = response.task;
+        // Try to find container — could be in page editor or in grid card
+        var container = document.getElementById('tasks-container');
+        if (!container) {
+            var card = document.querySelector('.page-card[data-page-id="' + pageId + '"]');
+            if (card) {
+                container = card.querySelector('.page-card-editor');
+            }
+        }
+        if (container) {
+            var options = buildInlineOptions(pageId);
+            var el = renderTaskItem(task, 0, [task], options);
+            container.appendChild(el);
+            focusTaskText(task.id);
+        }
     });
 }
 
@@ -348,11 +362,29 @@ if (isHighPriority) {
 }
 
 // ==========================================
-// Inline Tasks (for pages grid on main page)
+// Focus helper — set cursor to task text
 // ==========================================
 
-function renderInlineTasks(pageTasks, container, pageId) {
-    var options = {
+function focusTaskText(taskId) {
+    var textEl = document.querySelector('.task-item[data-task-id="' + taskId + '"] .task-text');
+    if (textEl) {
+        textEl.focus();
+        // Place cursor at end of text
+        var range = document.createRange();
+        var sel = window.getSelection();
+        range.selectNodeContents(textEl);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+}
+
+// ==========================================
+// Build inline options (reusable)
+// ==========================================
+
+function buildInlineOptions(pageId) {
+    return {
         pageId: pageId,
         onToggleStatus: function(taskId, completed) {
             var newStatus = completed ? 'finished' : 'processed';
@@ -363,8 +395,21 @@ function renderInlineTasks(pageTasks, container, pageId) {
         onAddChild: function(parentId) {
             apiRequest('/pages/' + pageId + '/tasks', 'POST', {
                 text: '', parentId: parentId, order: 0
-            }).then(function() {
-                reloadPage(pageId);
+            }).then(function(response) {
+                var task = response.task;
+                var parentEl = document.querySelector('.task-item[data-task-id="' + parentId + '"]');
+                if (parentEl) {
+                    var childrenContainer = parentEl.querySelector('.task-children');
+                    if (!childrenContainer) {
+                        childrenContainer = document.createElement('div');
+                        childrenContainer.className = 'task-children';
+                        parentEl.appendChild(childrenContainer);
+                    }
+                    var options = buildInlineOptions(pageId);
+                    var el = renderTaskItem(task, parseInt(parentEl.dataset.level) + 1, [task], options);
+                    childrenContainer.appendChild(el);
+                    focusTaskText(task.id);
+                }
             });
         },
         onDelete: function(taskId) {
@@ -373,13 +418,36 @@ function renderInlineTasks(pageTasks, container, pageId) {
             });
         },
         onAddAfter: function(taskId) {
+            var currentEl = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+            var parentId = currentEl && currentEl.dataset.parentId ? parseInt(currentEl.dataset.parentId) : null;
             apiRequest('/pages/' + pageId + '/tasks', 'POST', {
-                text: '', parentId: null, order: 999
-            }).then(function() {
-                reloadPage(pageId);
+                text: '', parentId: parentId, order: 999
+            }).then(function(response) {
+                var task = response.task;
+                if (currentEl) {
+                    var container = currentEl.parentNode;
+                    var level = parseInt(currentEl.dataset.level) || 0;
+                    var options = buildInlineOptions(pageId);
+                    var el = renderTaskItem(task, level, [task], options);
+                    var nextEl = currentEl.nextElementSibling;
+                    if (nextEl) {
+                        container.insertBefore(el, nextEl);
+                    } else {
+                        container.appendChild(el);
+                    }
+                    focusTaskText(task.id);
+                }
             });
         }
     };
+}
+
+// ==========================================
+// Inline Tasks (for pages grid on main page)
+// ==========================================
+
+function renderInlineTasks(pageTasks, container, pageId) {
+    var options = buildInlineOptions(pageId);
 
     container.innerHTML = '';
 
