@@ -156,13 +156,11 @@ function renderTaskItem(task, level, taskList, options) {
 
     var deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-task-btn';
-    deleteBtn.title = 'Удалить';
+    deleteBtn.title = isCompleted ? 'Удалить' : 'Завершить';
     deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
     deleteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        if (confirm('Удалить задачу?')) {
-            options.onDelete(task.id);
-        }
+        handleTaskDeleteOrFinish(task.id, isCompleted, options);
     });
     actions.appendChild(deleteBtn);
 
@@ -211,7 +209,7 @@ function renderTaskItem(task, level, taskList, options) {
             var html = text.innerHTML;
             if (txt === '' && (html === '' || html === '<br>' || html === '<br/>')) {
                 e.preventDefault();
-                options.onDelete(task.id);
+                handleTaskDeleteOrFinish(task.id, isCompleted, options);
             }
         }
     });
@@ -483,10 +481,29 @@ function handleContextAction(action) {
             togglePriority(currentTaskId);
             break;
         case 'delete':
-            if (confirm('Удалить задачу?')) {
-                apiRequest('/tasks/' + currentTaskId, 'DELETE').then(function() { reloadPage(pageId); });
-            }
+            handleTaskDeleteOrFinish(currentTaskId, false, {
+                pageId: pageId,
+                onToggleStatus: function(taskId, completed) {
+                    var newStatus = completed ? 'finished' : 'processed';
+                    apiRequest('/tasks/' + taskId + '/status', 'PUT', { status: newStatus }).then(function() {
+                        reloadPage(pageId);
+                    });
+                },
+                onDelete: function(taskId) {
+                    apiRequest('/tasks/' + taskId, 'DELETE').then(function() { reloadPage(pageId); });
+                }
+            });
             break;
+    }
+}
+
+function handleTaskDeleteOrFinish(taskId, isCompleted, options) {
+    if (isCompleted) {
+        // Уже завершена — удаляем без подтверждения
+        options.onDelete(taskId);
+    } else {
+        // Не завершена — устанавливаем статус finished
+        options.onToggleStatus(taskId, true);
     }
 }
 
