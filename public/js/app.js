@@ -864,11 +864,21 @@ function setTaskAssignee(taskId, email) {
 // New Status Modal
 // ==========================================
 
+var newStatusIconPicker = null;
+
 function showNewStatusModal() {
     var modal = document.getElementById('new-status-modal');
     if (modal) {
         modal.style.display = 'flex';
         document.getElementById('new-status-name-input').value = '';
+
+        // Initialize icon picker if not yet created
+        var pickerContainer = document.getElementById('new-status-icon-picker');
+        if (pickerContainer && !pickerContainer.querySelector('.icon-picker-wrapper')) {
+            newStatusIconPicker = createIconPicker('fa-circle', function() {});
+            pickerContainer.appendChild(newStatusIconPicker);
+        }
+
         setTimeout(function() {
             document.getElementById('new-status-name-input').focus();
         }, 100);
@@ -883,9 +893,7 @@ function confirmNewStatus() {
     var name = document.getElementById('new-status-name-input').value.trim();
     if (!name) return;
 
-    var iconInput = document.getElementById('new-status-icon-input');
-    var selectedIcon = iconInput.querySelector('.icon-option.selected');
-    var icon = selectedIcon ? selectedIcon.dataset.value : 'fa-circle';
+    var icon = newStatusIconPicker ? newStatusIconPicker.getIcon() : 'fa-circle';
 
     closeNewStatusModal();
 
@@ -1189,6 +1197,15 @@ function openProjectSettingsModal() {
     if (!currentProjectId) return;
     document.getElementById('project-settings-modal').style.display = 'flex';
     loadProjectSettingsData();
+
+    // Initialize icon picker for the "add status" form if not yet created
+    var pickerContainer = document.getElementById('settings-status-icon-picker');
+    if (pickerContainer && !pickerContainer.querySelector('.icon-picker-wrapper')) {
+        addStatusIconPicker = createIconPicker('fa-circle', function(iconClass) {
+            // Just update selection, no API call needed
+        });
+        pickerContainer.appendChild(addStatusIconPicker);
+    }
 }
 
 function closeProjectSettingsModal() {
@@ -1249,61 +1266,17 @@ function loadProjectSettingsStatuses() {
             var info = document.createElement('div');
             info.className = 'status-info';
 
-            // Icon dropdown
-            var iconWrapper = document.createElement('div');
-            iconWrapper.className = 'custom-select-wrapper';
-            iconWrapper.style.width = 'auto';
-            iconWrapper.style.display = 'inline-block';
-
-            var iconTrigger = document.createElement('div');
-            iconTrigger.className = 'custom-select-trigger';
-            iconTrigger.style.width = 'auto';
-            iconTrigger.style.padding = '4px 8px';
-            iconTrigger.innerHTML = '<span class="custom-select-trigger-text"><i class="fas ' + (s.icon || 'fa-circle') + '"></i></span> <i class="fas fa-chevron-down"></i>';
-
-            var iconDropdown = document.createElement('div');
-            iconDropdown.className = 'custom-select-dropdown';
-            iconDropdown.style.width = 'auto';
-            iconDropdown.style.minWidth = '120px';
-
-            var icons = ['fa-circle', 'fa-check-circle', 'fa-cogs', 'fa-clock', 'fa-star', 'fa-flag', 'fa-fire', 'fa-bolt'];
-            icons.forEach(function(iconClass) {
-                var item = document.createElement('div');
-                item.className = 'custom-select-item' + (s.icon === iconClass ? ' selected' : '');
-                item.innerHTML = '<i class="fas ' + iconClass + '"></i>';
-                item.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    iconTrigger.querySelector('.custom-select-trigger-text').innerHTML = '<i class="fas ' + iconClass + '"></i>';
-                    iconDropdown.classList.remove('open');
-                    iconTrigger.classList.remove('open');
-                    // Save icon change
+            if (!isDefault) {
+                // Icon picker with search
+                var iconPicker = createIconPicker(s.icon || 'fa-circle', function(iconClass) {
                     apiRequest('/statuses/' + s.id, 'PUT', { icon: iconClass }).then(function() {
                         if (currentProjectId) {
                             loadProjectStatuses(currentProjectId);
                         }
                     });
                 });
-                iconDropdown.appendChild(item);
-            });
-
-            iconWrapper.appendChild(iconTrigger);
-            iconWrapper.appendChild(iconDropdown);
-
-            iconTrigger.addEventListener('click', function(e) {
-                e.stopPropagation();
-                iconDropdown.classList.toggle('open');
-                iconTrigger.classList.toggle('open');
-            });
-
-            // Close dropdown on outside click
-            document.addEventListener('click', function(e) {
-                if (!iconWrapper.contains(e.target)) {
-                    iconDropdown.classList.remove('open');
-                    iconTrigger.classList.remove('open');
-                }
-            });
-
-            info.appendChild(iconWrapper);
+                info.appendChild(iconPicker);
+            }
 
             var nameInput = document.createElement('input');
             nameInput.type = 'text';
@@ -1460,8 +1433,10 @@ function renameProject() {
     });
 }
 
+var addStatusIconPicker = null;
+
 function addStatusFromSettings() {
-    var nameInput = document.getElementById('new-status-name-input');
+    var nameInput = document.getElementById('settings-status-name-input');
     var name = nameInput.value.trim();
     var messageEl = document.getElementById('add-status-message');
 
@@ -1471,9 +1446,7 @@ function addStatusFromSettings() {
         return;
     }
 
-    var iconInput = document.getElementById('settings-status-icon-input');
-    var selectedIcon = iconInput.querySelector('.icon-option.selected');
-    var icon = selectedIcon ? selectedIcon.dataset.value : 'fa-circle';
+    var icon = addStatusIconPicker ? addStatusIconPicker.getIcon() : 'fa-circle';
 
     messageEl.className = 'form-message';
     messageEl.textContent = 'Добавление...';
@@ -1487,11 +1460,10 @@ function addStatusFromSettings() {
         messageEl.className = 'form-message success';
         messageEl.textContent = 'Статус добавлен!';
         nameInput.value = '';
-        // Reset icon selection
-        iconInput.querySelectorAll('.icon-option').forEach(function(opt) {
-            opt.classList.remove('selected');
-        });
-        iconInput.querySelector('.icon-option[data-value="fa-circle"]').classList.add('selected');
+        // Reset icon picker
+        if (addStatusIconPicker) {
+            addStatusIconPicker.setIcon('fa-circle');
+        }
         loadProjectSettingsStatuses();
         if (currentProjectId) {
             loadProjectStatuses(currentProjectId);
@@ -1504,4 +1476,130 @@ function addStatusFromSettings() {
             messageEl.textContent = 'Ошибка при добавлении статуса';
         }
     });
+}
+
+// ==========================================
+// Icon Picker Component
+// ==========================================
+
+var fontawesomeIconList = null;
+
+function getFontawesomeIcons() {
+    if (fontawesomeIconList) return fontawesomeIconList;
+
+    fontawesomeIconList = [];
+    var seen = {};
+
+    for (var i = 0; i < document.styleSheets.length; i++) {
+        try {
+            var sheet = document.styleSheets[i];
+            if (!sheet.cssRules) continue;
+            for (var j = 0; j < sheet.cssRules.length; j++) {
+                var rule = sheet.cssRules[j];
+                if (rule.selectorText && rule.selectorText.endsWith('::before')) {
+                    // Extract the icon name: find last .fa-XXXX class in selector
+                    var match = rule.selectorText.match(/\.(fa-[a-zA-Z0-9\-]+)/);
+                    if (match) {
+                        var name = match[1];
+                        if (!seen[name]) {
+                            seen[name] = true;
+                            fontawesomeIconList.push(name);
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            // Some stylesheets are not accessible due to CORS
+        }
+    }
+
+    return fontawesomeIconList;
+}
+
+function createIconPicker(selectedIcon, onChange) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'icon-picker-wrapper';
+
+    var trigger = document.createElement('div');
+    trigger.className = 'icon-picker-trigger';
+    trigger.innerHTML = '<i class="fas ' + selectedIcon + '"></i> <i class="fas fa-chevron-down"></i>';
+
+    var dropdown = document.createElement('div');
+    dropdown.className = 'icon-picker-dropdown';
+
+    var searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'icon-picker-search';
+    searchInput.placeholder = 'Поиск иконки...';
+
+    var preview = document.createElement('div');
+    preview.className = 'icon-picker-preview';
+    preview.innerHTML = '<i class="fas ' + selectedIcon + '"></i>';
+
+    var list = document.createElement('div');
+    list.className = 'icon-picker-list';
+
+    function renderIcons(query) {
+        list.innerHTML = '';
+        var allIcons = getFontawesomeIcons();
+        var filtered = allIcons;
+        if (query) {
+            var q = query.toLowerCase().replace(/^fa-/, '');
+            filtered = allIcons.filter(function(icon) {
+                return icon.toLowerCase().indexOf(q) !== -1;
+            });
+        }
+        filtered.forEach(function(iconClass) {
+            var item = document.createElement('div');
+            item.className = 'icon-picker-item' + (iconClass === selectedIcon ? ' selected' : '');
+            item.innerHTML = '<i class="fas ' + iconClass + '"></i>';
+            item.title = iconClass;
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectedIcon = iconClass;
+                trigger.innerHTML = '<i class="fas ' + iconClass + '"></i> <i class="fas fa-chevron-down"></i>';
+                preview.innerHTML = '<i class="fas ' + iconClass + '"></i>';
+                dropdown.classList.remove('open');
+                if (onChange) onChange(iconClass);
+            });
+            list.appendChild(item);
+        });
+    }
+
+    searchInput.addEventListener('input', function() {
+        renderIcons(this.value);
+    });
+
+    trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+        if (dropdown.classList.contains('open')) {
+            searchInput.value = '';
+            renderIcons('');
+            setTimeout(function() { searchInput.focus(); }, 50);
+        }
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+
+    dropdown.appendChild(searchInput);
+    dropdown.appendChild(preview);
+    dropdown.appendChild(list);
+    wrapper.appendChild(trigger);
+    wrapper.appendChild(dropdown);
+
+    // Public methods
+    wrapper.getIcon = function() { return selectedIcon; };
+    wrapper.setIcon = function(icon) {
+        selectedIcon = icon;
+        trigger.innerHTML = '<i class="fas ' + icon + '"></i> <i class="fas fa-chevron-down"></i>';
+        preview.innerHTML = '<i class="fas ' + icon + '"></i>';
+    };
+
+    return wrapper;
 }
