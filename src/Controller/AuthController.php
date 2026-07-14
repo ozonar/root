@@ -29,6 +29,12 @@ class AuthController extends AbstractController
     #[Route('/register', name: 'api_register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
+        // Only allow registration if no users exist
+        $userCount = $this->entityManager->getRepository(User::class)->count([]);
+        if ($userCount > 0) {
+            return $this->json(['error' => 'Registration is closed. Use invite link.'], Response::HTTP_FORBIDDEN);
+        }
+
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['email']) || !isset($data['password'])) {
@@ -38,6 +44,7 @@ class AuthController extends AbstractController
         $email = trim($data['email']);
         $password = $data['password'];
         $name = $data['name'] ?? null;
+        $projectName = trim($data['projectName'] ?? '');
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->json(['error' => 'Invalid email format'], Response::HTTP_BAD_REQUEST);
@@ -65,6 +72,33 @@ class AuthController extends AbstractController
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
+
+        // Create project if name provided
+        if ($projectName !== '') {
+            $project = new \App\Entity\Project();
+            $project->setName($projectName);
+            $project->setCreatedBy($user);
+            $project->setOwner($user);
+
+            $this->entityManager->persist($project);
+            $this->entityManager->flush();
+
+            // Add user as owner member
+            $userProject = new \App\Entity\UserProject();
+            $userProject->setUser($user);
+            $userProject->setProject($project);
+            $userProject->setRole('owner');
+
+            $this->entityManager->persist($userProject);
+            $this->entityManager->flush();
+
+            // Create default statuses
+            $this->statusService->createDefaultStatuses($project);
+
+            // Set as current project
+            $user->setCurrentProject($project);
+            $this->entityManager->flush();
+        }
 
         $authToken = $this->tokenService->generateAuthToken($user);
 
@@ -94,7 +128,7 @@ class AuthController extends AbstractController
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
 
         if (!$user || !$this->passwordHasher->isPasswordValid($user, $password)) {
-            return $this->json(['error' => 'Invalid credentials'], Response::HTTP_UNAUTHORIZED);
+            return $this->json(['error' => 'Неверные данные для входа'], Response::HTTP_UNAUTHORIZED);
         }
 
         $authToken = $this->tokenService->generateAuthToken($user);

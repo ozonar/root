@@ -18,7 +18,10 @@ class AppController extends AbstractController
     #[Route('/login', name: 'app_login')]
     public function login(): Response
     {
-        return $this->render('login.html.twig');
+        $userCount = $this->entityManager->getRepository(\App\Entity\User::class)->count([]);
+        return $this->render('login.html.twig', [
+            'canRegister' => $userCount === 0,
+        ]);
     }
 
     #[Route('/', name: 'app_index')]
