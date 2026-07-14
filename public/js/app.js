@@ -1180,3 +1180,328 @@ function closeModal() {
     document.getElementById('task-modal').style.display = 'none';
     currentTaskId = null;
 }
+
+// ==========================================
+// Project Settings Modal
+// ==========================================
+
+function openProjectSettingsModal() {
+    if (!currentProjectId) return;
+    document.getElementById('project-settings-modal').style.display = 'flex';
+    loadProjectSettingsData();
+}
+
+function closeProjectSettingsModal() {
+    document.getElementById('project-settings-modal').style.display = 'none';
+}
+
+function loadProjectSettingsData() {
+    loadProjectUsersList();
+    loadProjectSettingsStatuses();
+    loadProjectSettingsName();
+}
+
+function loadProjectSettingsName() {
+    var selector = document.getElementById('project-selector');
+    var selectedOption = selector.options[selector.selectedIndex];
+    var currentName = selectedOption ? selectedOption.textContent : '';
+    document.getElementById('rename-project-input').value = currentName;
+}
+
+function loadProjectUsersList() {
+    var list = document.getElementById('project-users-list');
+    list.innerHTML = '<li class="user-list-empty">Загрузка...</li>';
+
+    apiRequest('/projects/' + currentProjectId + '/users').then(function(response) {
+        list.innerHTML = '';
+        var users = response.users || [];
+        if (users.length === 0) {
+            list.innerHTML = '<li class="user-list-empty">Нет участников</li>';
+            return;
+        }
+        users.forEach(function(u) {
+            var li = document.createElement('li');
+            li.innerHTML = '<span>' + u.displayName + ' <span class="user-email">(' + u.email + ')</span></span>';
+            list.appendChild(li);
+        });
+    }).catch(function() {
+        list.innerHTML = '<li class="user-list-empty">Ошибка загрузки</li>';
+    });
+}
+
+function loadProjectSettingsStatuses() {
+    var list = document.getElementById('settings-statuses-list');
+    list.innerHTML = '<li class="status-list-empty">Загрузка...</li>';
+
+    apiRequest('/projects/' + currentProjectId + '/statuses').then(function(response) {
+        list.innerHTML = '';
+        var statuses = response.statuses || [];
+        if (statuses.length === 0) {
+            list.innerHTML = '<li class="status-list-empty">Нет статусов</li>';
+            return;
+        }
+        statuses.forEach(function(s) {
+            var li = document.createElement('li');
+            li.dataset.statusId = s.id;
+
+            var isDefault = (s.systemName === 'processed' || s.systemName === 'finished');
+
+            var info = document.createElement('div');
+            info.className = 'status-info';
+
+            // Icon dropdown
+            var iconWrapper = document.createElement('div');
+            iconWrapper.className = 'custom-select-wrapper';
+            iconWrapper.style.width = 'auto';
+            iconWrapper.style.display = 'inline-block';
+
+            var iconTrigger = document.createElement('div');
+            iconTrigger.className = 'custom-select-trigger';
+            iconTrigger.style.width = 'auto';
+            iconTrigger.style.padding = '4px 8px';
+            iconTrigger.innerHTML = '<span class="custom-select-trigger-text"><i class="fas ' + (s.icon || 'fa-circle') + '"></i></span> <i class="fas fa-chevron-down"></i>';
+
+            var iconDropdown = document.createElement('div');
+            iconDropdown.className = 'custom-select-dropdown';
+            iconDropdown.style.width = 'auto';
+            iconDropdown.style.minWidth = '120px';
+
+            var icons = ['fa-circle', 'fa-check-circle', 'fa-cogs', 'fa-clock', 'fa-star', 'fa-flag', 'fa-fire', 'fa-bolt'];
+            icons.forEach(function(iconClass) {
+                var item = document.createElement('div');
+                item.className = 'custom-select-item' + (s.icon === iconClass ? ' selected' : '');
+                item.innerHTML = '<i class="fas ' + iconClass + '"></i>';
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    iconTrigger.querySelector('.custom-select-trigger-text').innerHTML = '<i class="fas ' + iconClass + '"></i>';
+                    iconDropdown.classList.remove('open');
+                    iconTrigger.classList.remove('open');
+                    // Save icon change
+                    apiRequest('/statuses/' + s.id, 'PUT', { icon: iconClass }).then(function() {
+                        if (currentProjectId) {
+                            loadProjectStatuses(currentProjectId);
+                        }
+                    });
+                });
+                iconDropdown.appendChild(item);
+            });
+
+            iconWrapper.appendChild(iconTrigger);
+            iconWrapper.appendChild(iconDropdown);
+
+            iconTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                iconDropdown.classList.toggle('open');
+                iconTrigger.classList.toggle('open');
+            });
+
+            // Close dropdown on outside click
+            document.addEventListener('click', function(e) {
+                if (!iconWrapper.contains(e.target)) {
+                    iconDropdown.classList.remove('open');
+                    iconTrigger.classList.remove('open');
+                }
+            });
+
+            info.appendChild(iconWrapper);
+
+            var nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.className = 'status-name-input';
+            nameInput.value = s.name;
+            nameInput.dataset.statusId = s.id;
+            nameInput.dataset.originalName = s.name;
+            info.appendChild(nameInput);
+
+            li.appendChild(info);
+
+            var actions = document.createElement('div');
+            actions.className = 'status-actions';
+
+            var saveBtn = document.createElement('button');
+            saveBtn.className = 'status-save-btn';
+            saveBtn.title = 'Сохранить';
+            saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+            saveBtn.dataset.statusId = s.id;
+            saveBtn.style.display = 'none';
+            saveBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                saveStatusName(s.id, nameInput.value);
+            });
+            actions.appendChild(saveBtn);
+
+            if (!isDefault) {
+                var deleteBtn = document.createElement('button');
+                deleteBtn.className = 'status-delete-btn';
+                deleteBtn.title = 'Удалить статус';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                deleteBtn.dataset.statusId = s.id;
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    deleteStatus(s.id);
+                });
+                actions.appendChild(deleteBtn);
+            }
+
+            li.appendChild(actions);
+            list.appendChild(li);
+
+            // Show save button on input change
+            nameInput.addEventListener('input', function() {
+                var hasChanged = nameInput.value !== nameInput.dataset.originalName;
+                saveBtn.style.display = hasChanged ? 'inline-flex' : 'none';
+            });
+
+            nameInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveStatusName(s.id, nameInput.value);
+                }
+            });
+        });
+    }).catch(function() {
+        list.innerHTML = '<li class="status-list-empty">Ошибка загрузки</li>';
+    });
+}
+
+function saveStatusName(statusId, newName) {
+    if (!newName.trim()) return;
+
+    apiRequest('/statuses/' + statusId, 'PUT', { name: newName.trim() }).then(function(response) {
+        // Update the input's original name
+        var input = document.querySelector('.status-name-input[data-status-id="' + statusId + '"]');
+        if (input) {
+            input.dataset.originalName = newName.trim();
+            var saveBtn = document.querySelector('.status-save-btn[data-status-id="' + statusId + '"]');
+            if (saveBtn) saveBtn.style.display = 'none';
+        }
+        // Reload statuses in the main UI
+        if (currentProjectId) {
+            loadProjectStatuses(currentProjectId);
+        }
+    }).catch(function(err) {
+        console.error('Failed to save status name:', err);
+    });
+}
+
+function deleteStatus(statusId) {
+    if (!confirm('Вы уверены, что хотите удалить этот статус? Задачи с этим статусом будут сброшены.')) return;
+
+    apiRequest('/statuses/' + statusId, 'DELETE').then(function() {
+        loadProjectSettingsStatuses();
+        if (currentProjectId) {
+            loadProjectStatuses(currentProjectId);
+        }
+    }).catch(function(err) {
+        console.error('Failed to delete status:', err);
+        alert('Не удалось удалить статус.');
+    });
+}
+
+function inviteUser() {
+    var emailInput = document.getElementById('invite-user-email');
+    var email = emailInput.value.trim();
+    var messageEl = document.getElementById('invite-user-message');
+
+    if (!email) {
+        messageEl.className = 'form-message error';
+        messageEl.textContent = 'Введите email';
+        return;
+    }
+
+    messageEl.className = 'form-message';
+    messageEl.textContent = 'Отправка...';
+
+    apiRequest('/projects/' + currentProjectId + '/invite', 'POST', { email: email }).then(function(response) {
+        messageEl.className = 'form-message success';
+        messageEl.textContent = 'Пользователь приглашён!';
+        emailInput.value = '';
+        loadProjectUsersList();
+    }).catch(function(err) {
+        messageEl.className = 'form-message error';
+        if (err.data && err.data.error) {
+            messageEl.textContent = err.data.error;
+        } else {
+            messageEl.textContent = 'Ошибка при отправке приглашения';
+        }
+    });
+}
+
+function renameProject() {
+    var input = document.getElementById('rename-project-input');
+    var name = input.value.trim();
+    var messageEl = document.getElementById('rename-project-message');
+
+    if (!name) {
+        messageEl.className = 'form-message error';
+        messageEl.textContent = 'Введите название';
+        return;
+    }
+
+    messageEl.className = 'form-message';
+    messageEl.textContent = 'Сохранение...';
+
+    apiRequest('/projects/' + currentProjectId + '/rename', 'PUT', { name: name }).then(function(response) {
+        messageEl.className = 'form-message success';
+        messageEl.textContent = 'Название сохранено!';
+        // Update the selector
+        var selector = document.getElementById('project-selector');
+        var selectedOption = selector.options[selector.selectedIndex];
+        if (selectedOption) {
+            selectedOption.textContent = name;
+        }
+    }).catch(function(err) {
+        messageEl.className = 'form-message error';
+        if (err.data && err.data.error) {
+            messageEl.textContent = err.data.error;
+        } else {
+            messageEl.textContent = 'Ошибка при сохранении';
+        }
+    });
+}
+
+function addStatusFromSettings() {
+    var nameInput = document.getElementById('new-status-name-input');
+    var name = nameInput.value.trim();
+    var messageEl = document.getElementById('add-status-message');
+
+    if (!name) {
+        messageEl.className = 'form-message error';
+        messageEl.textContent = 'Введите название статуса';
+        return;
+    }
+
+    var iconInput = document.getElementById('settings-status-icon-input');
+    var selectedIcon = iconInput.querySelector('.icon-option.selected');
+    var icon = selectedIcon ? selectedIcon.dataset.value : 'fa-circle';
+
+    messageEl.className = 'form-message';
+    messageEl.textContent = 'Добавление...';
+
+    apiRequest('/statuses', 'POST', {
+        name: name,
+        systemName: name,
+        icon: icon,
+        projectId: currentProjectId
+    }).then(function() {
+        messageEl.className = 'form-message success';
+        messageEl.textContent = 'Статус добавлен!';
+        nameInput.value = '';
+        // Reset icon selection
+        iconInput.querySelectorAll('.icon-option').forEach(function(opt) {
+            opt.classList.remove('selected');
+        });
+        iconInput.querySelector('.icon-option[data-value="fa-circle"]').classList.add('selected');
+        loadProjectSettingsStatuses();
+        if (currentProjectId) {
+            loadProjectStatuses(currentProjectId);
+        }
+    }).catch(function(err) {
+        messageEl.className = 'form-message error';
+        if (err.data && err.data.error) {
+            messageEl.textContent = err.data.error;
+        } else {
+            messageEl.textContent = 'Ошибка при добавлении статуса';
+        }
+    });
+}

@@ -12,6 +12,9 @@
         <div class="header-center">
             <select id="project-selector" class="project-selector">
             </select>
+            <button id="project-settings-btn" class="btn btn-sm btn-outline project-settings-btn" title="Настройки проекта">
+                <i class="fas fa-cog"></i>
+            </button>
         </div>
         <div class="header-right">
             <span id="user-name" class="user-name"></span>
@@ -100,6 +103,85 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" id="new-page-modal-cancel">Отмена</button>
             <button class="btn btn-primary" id="new-page-modal-save">Создать</button>
+        </div>
+    </div>
+</div>
+
+<!-- Project Settings Modal -->
+<div class="modal-overlay" id="project-settings-modal" style="display: none;">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3>Настройки проекта</h3>
+            <button class="modal-close" id="project-settings-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Tabs -->
+            <div class="tabs" id="project-settings-tabs">
+                <button class="tab active" data-tab="users">Пользователи</button>
+                <button class="tab" data-tab="rename">Переименовать</button>
+                <button class="tab" data-tab="statuses">Статусы</button>
+            </div>
+
+            <!-- Tab: Users -->
+            <div class="tab-content active" id="tab-users">
+                <div class="form-group">
+                    <label>Пригласить пользователя</label>
+                    <div class="input-row">
+                        <input type="email" id="invite-user-email" class="form-input" placeholder="Email пользователя...">
+                        <button class="btn btn-primary" id="invite-user-btn">Пригласить</button>
+                    </div>
+                    <div id="invite-user-message" class="form-message"></div>
+                </div>
+                <div class="form-group">
+                    <label>Участники проекта</label>
+                    <ul class="user-list" id="project-users-list">
+                        <li class="user-list-empty">Загрузка...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab: Rename -->
+            <div class="tab-content" id="tab-rename">
+                <div class="form-group">
+                    <label>Новое название проекта</label>
+                    <div class="input-row">
+                        <input type="text" id="rename-project-input" class="form-input" placeholder="Введите название...">
+                        <button class="btn btn-primary" id="rename-project-btn">Сохранить</button>
+                    </div>
+                    <div id="rename-project-message" class="form-message"></div>
+                </div>
+            </div>
+
+            <!-- Tab: Statuses -->
+            <div class="tab-content" id="tab-statuses">
+                <div class="form-group">
+                    <label>Добавить статус</label>
+                    <div class="input-row">
+                        <input type="text" id="new-status-name-input" class="form-input" placeholder="Название статуса...">
+                        <div class="icon-select" id="settings-status-icon-input">
+                            <label class="icon-option selected" data-value="fa-circle"><i class="fas fa-circle"></i></label>
+                            <label class="icon-option" data-value="fa-check-circle"><i class="fas fa-check-circle"></i></label>
+                            <label class="icon-option" data-value="fa-cogs"><i class="fas fa-cogs"></i></label>
+                            <label class="icon-option" data-value="fa-clock"><i class="fas fa-clock"></i></label>
+                            <label class="icon-option" data-value="fa-star"><i class="fas fa-star"></i></label>
+                            <label class="icon-option" data-value="fa-flag"><i class="fas fa-flag"></i></label>
+                            <label class="icon-option" data-value="fa-fire"><i class="fas fa-fire"></i></label>
+                            <label class="icon-option" data-value="fa-bolt"><i class="fas fa-bolt"></i></label>
+                        </div>
+                        <button class="btn btn-primary" id="settings-add-status-btn">Добавить</button>
+                    </div>
+                    <div id="add-status-message" class="form-message"></div>
+                </div>
+                <div class="form-group">
+                    <label>Текущие статусы</label>
+                    <ul class="status-list" id="settings-statuses-list">
+                        <li class="status-list-empty">Загрузка...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="project-settings-modal-cancel">Закрыть</button>
         </div>
     </div>
 </div>

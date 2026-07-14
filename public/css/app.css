@@ -177,6 +177,22 @@ body {
     border-color: var(--primary);
 }
 
+.project-settings-btn {
+    margin-left: 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+    color: var(--text-muted);
+    border-color: var(--border);
+    background: var(--bg);
+    transition: all 0.15s;
+}
+
+.project-settings-btn:hover {
+    color: var(--text);
+    border-color: var(--text-muted);
+    background: var(--bg-sidebar);
+}
+
 .user-name {
     font-size: 14px;
     color: var(--text-muted);
@@ -706,6 +722,17 @@ body {
     background: rgba(79,70,229,0.08);
 }
 
+.icon-select-sm {
+    gap: 3px;
+}
+
+.icon-select-sm .icon-option {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+    border-width: 1px;
+}
+
 /* ==========================================
    Context Menu
    ========================================== */
@@ -1149,6 +1176,199 @@ body {
 
 .btn-danger:hover {
     background: #dc2626;
+}
+
+/* ==========================================
+   Tabs
+   ========================================== */
+
+.tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 20px;
+}
+
+.tab {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all 0.15s;
+}
+
+.tab:hover {
+    color: var(--text);
+}
+
+.tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ==========================================
+   Input Row
+   ========================================== */
+
+.input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.input-row .form-input {
+    flex: 1;
+}
+
+.input-row .icon-select {
+    flex-shrink: 0;
+}
+
+/* ==========================================
+   Form Message
+   ========================================== */
+
+.form-message {
+    margin-top: 8px;
+    font-size: 13px;
+    min-height: 20px;
+}
+
+.form-message.success {
+    color: var(--success);
+}
+
+.form-message.error {
+    color: var(--danger);
+}
+
+/* ==========================================
+   User List
+   ========================================== */
+
+.user-list {
+    list-style: none;
+    margin-top: 8px;
+}
+
+.user-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.user-list .user-list-empty {
+    color: var(--text-muted);
+    font-style: italic;
+    justify-content: center;
+    border-color: transparent;
+}
+
+.user-list .user-email {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* ==========================================
+   Status List (in settings)
+   ========================================== */
+
+.status-list {
+    list-style: none;
+    margin-top: 8px;
+}
+
+.status-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 4px;
+    font-size: 14px;
+    gap: 8px;
+}
+
+.status-list .status-list-empty {
+    color: var(--text-muted);
+    font-style: italic;
+    justify-content: center;
+    border-color: transparent;
+}
+
+.status-list .status-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.status-list .status-name-input {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    outline: none;
+    background: transparent;
+}
+
+.status-list .status-name-input:focus {
+    border-color: var(--primary);
+}
+
+.status-list .status-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.status-list .status-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 13px;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s;
+    color: var(--text-muted);
+}
+
+.status-list .status-actions button:hover {
+    color: var(--text);
+    background: var(--bg-sidebar);
+}
+
+.status-list .status-actions .status-delete-btn:hover {
+    color: var(--danger);
+    background: #fef2f2;
+}
+
+/* ==========================================
+   Modal LG
+   ========================================== */
+
+.modal-lg {
+    max-width: 640px;
 }
 
 /* ==========================================

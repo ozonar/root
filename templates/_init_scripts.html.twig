@@ -150,5 +150,111 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    // Project Settings Modal handlers
+    var projectSettingsBtn = document.getElementById('project-settings-btn');
+    if (projectSettingsBtn) {
+        projectSettingsBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openProjectSettingsModal();
+        });
+    }
+
+    var projectSettingsClose = document.getElementById('project-settings-modal-close');
+    if (projectSettingsClose) {
+        projectSettingsClose.addEventListener('click', function() {
+            closeProjectSettingsModal();
+        });
+    }
+
+    var projectSettingsCancel = document.getElementById('project-settings-modal-cancel');
+    if (projectSettingsCancel) {
+        projectSettingsCancel.addEventListener('click', function() {
+            closeProjectSettingsModal();
+        });
+    }
+
+    // Close on overlay click
+    var projectSettingsModal = document.getElementById('project-settings-modal');
+    if (projectSettingsModal) {
+        projectSettingsModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeProjectSettingsModal();
+            }
+        });
+    }
+
+    // Tabs
+    var tabs = document.querySelectorAll('#project-settings-tabs .tab');
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            // Deactivate all tabs
+            tabs.forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+
+            // Hide all tab contents
+            var tabContents = document.querySelectorAll('#project-settings-modal .tab-content');
+            tabContents.forEach(function(tc) { tc.classList.remove('active'); });
+
+            // Show selected tab
+            var target = document.getElementById('tab-' + this.dataset.tab);
+            if (target) {
+                target.classList.add('active');
+            }
+        });
+    });
+
+    // Invite user
+    var inviteBtn = document.getElementById('invite-user-btn');
+    if (inviteBtn) {
+        inviteBtn.addEventListener('click', function() {
+            inviteUser();
+        });
+    }
+
+    var inviteEmailInput = document.getElementById('invite-user-email');
+    if (inviteEmailInput) {
+        inviteEmailInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                inviteUser();
+            }
+        });
+    }
+
+    // Rename project
+    var renameBtn = document.getElementById('rename-project-btn');
+    if (renameBtn) {
+        renameBtn.addEventListener('click', function() {
+            renameProject();
+        });
+    }
+
+    var renameInput = document.getElementById('rename-project-input');
+    if (renameInput) {
+        renameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                renameProject();
+            }
+        });
+    }
+
+    // Add status from settings
+    var addStatusBtn = document.getElementById('settings-add-status-btn');
+    if (addStatusBtn) {
+        addStatusBtn.addEventListener('click', function() {
+            addStatusFromSettings();
+        });
+    }
+
+    var newStatusNameInput = document.getElementById('new-status-name-input');
+    if (newStatusNameInput) {
+        newStatusNameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addStatusFromSettings();
+            }
+        });
+    }
 });
 </script>

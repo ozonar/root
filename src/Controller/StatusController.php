@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Project;
+use App\Entity\Status;
 use App\Service\StatusService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -38,6 +39,16 @@ class StatusController extends AbstractController
         }
 
         $project = $this->entityManager->getRepository(Project::class)->find($projectId);
+
+        if (!$project) {
+            return $this->json(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $currentUser = $this->getUser();
+        if ($project->getOwner() !== $currentUser) {
+            return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+        }
+
         $status = $this->statusService->createStatus($systemName, $name, $icon, $project);
 
         return $this->json([
@@ -48,5 +59,88 @@ class StatusController extends AbstractController
                 'icon' => $status->getIcon(),
             ],
         ], Response::HTTP_CREATED);
+    }
+
+    #[Route('/{id}', name: 'api_statuses_update', methods: ['PUT'])]
+    public function update(int $id, Request $request): JsonResponse
+    {
+        $status = $this->entityManager->getRepository(Status::class)->find($id);
+        if (!$status) {
+            return $this->json(['error' => 'Status not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $project = $status->getProject();
+        if ($project) {
+            $currentUser = $this->getUser();
+            if ($project->getOwner() !== $currentUser) {
+                return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+            }
+        }
+
+        $data = json_decode($request->getContent(), true);
+
+        if (isset($data['name'])) {
+            $name = trim($data['name']);
+            if ($name === '') {
+                return $this->json(['error' => 'Name is required'], Response::HTTP_BAD_REQUEST);
+            }
+            $status->setName($name);
+        }
+
+        if (isset($data['icon'])) {
+            $status->setIcon($data['icon']);
+        }
+
+        if (isset($data['systemName'])) {
+            $status->setSystemName($data['systemName']);
+        }
+
+        $this->entityManager->flush();
+
+        return $this->json([
+            'status' => [
+                'id' => $status->getId(),
+                'systemName' => $status->getSystemName(),
+                'name' => $status->getName(),
+                'icon' => $status->getIcon(),
+            ],
+        ]);
+    }
+
+    #[Route('/{id}', name: 'api_statuses_delete', methods: ['DELETE'])]
+    public function delete(int $id): JsonResponse
+    {
+        $status = $this->entityManager->getRepository(Status::class)->find($id);
+        if (!$status) {
+            return $this->json(['error' => 'Status not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $project = $status->getProject();
+        if ($project) {
+            $currentUser = $this->getUser();
+            if ($project->getOwner() !== $currentUser) {
+                return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+            }
+        }
+
+        // Don't allow deleting default statuses
+        if (in_array($status->getSystemName(), ['processed', 'finished'])) {
+            return $this->json(['error' => 'Cannot delete default statuses'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Set tasks with this status to processed
+        foreach ($status->getTasks() as $task) {
+            $processedStatus = $this->entityManager
+                ->getRepository(Status::class)
+                ->findOneBy(['systemName' => 'processed', 'project' => $project]);
+            if ($processedStatus) {
+                $task->setStatus($processedStatus);
+            }
+        }
+
+        $this->entityManager->remove($status);
+        $this->entityManager->flush();
+
+        return $this->json(['success' => true]);
     }
 }
