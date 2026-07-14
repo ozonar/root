@@ -278,6 +278,51 @@ class ProjectController extends AbstractController
         ]);
     }
 
+    #[Route('', name: 'api_projects_create', methods: ['POST'])]
+    public function create(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $name = trim($data['name'] ?? '');
+
+        if ($name === '') {
+            return $this->json(['error' => 'Name is required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user = $this->getUser();
+
+        $project = new Project();
+        $project->setName($name);
+        $project->setCreatedBy($user);
+        $project->setOwner($user);
+
+        $this->entityManager->persist($project);
+        $this->entityManager->flush();
+
+        // Add creator as owner member
+        $userProject = new UserProject();
+        $userProject->setUser($user);
+        $userProject->setProject($project);
+        $userProject->setRole('owner');
+
+        $this->entityManager->persist($userProject);
+        $this->entityManager->flush();
+
+        // Create default statuses
+        $this->statusService->createDefaultStatuses($project);
+
+        // Set as current project
+        $user->setCurrentProject($project);
+        $this->entityManager->flush();
+
+        return $this->json([
+            'project' => [
+                'id' => $project->getId(),
+                'name' => $project->getName(),
+                'createdAt' => $project->getCreatedAt()->format('c'),
+            ],
+        ], Response::HTTP_CREATED);
+    }
+
     #[Route('/{id}/rename', name: 'api_project_rename', methods: ['PUT'])]
     public function rename(int $id, Request $request): JsonResponse
     {

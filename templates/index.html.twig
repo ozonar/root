@@ -87,6 +87,26 @@
     </div>
 </div>
 
+<!-- New Project Modal -->
+<div class="modal-overlay" id="new-project-modal" style="display: none;">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3>Новый проект</h3>
+            <button class="modal-close" id="new-project-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Название проекта</label>
+                <input type="text" id="new-project-name-input" class="form-input" placeholder="Введите название..." autofocus>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="new-project-modal-cancel">Отмена</button>
+            <button class="btn btn-primary" id="new-project-modal-save">Создать</button>
+        </div>
+    </div>
+</div>
+
 <!-- New Page Modal -->
 <div class="modal-overlay" id="new-page-modal" style="display: none;">
     <div class="modal modal-sm">
@@ -210,11 +230,37 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('project-selector').addEventListener('change', function() {
-        currentProjectId = parseInt(this.value);
+        var val = this.value;
+        if (val === 'new') {
+            showNewProjectModal();
+            // Reset selector to previously selected value
+            this.value = currentProjectId || '';
+            return;
+        }
+        currentProjectId = parseInt(val);
         if (currentProjectId) {
             loadProjectUsers(currentProjectId);
             loadProjectStatuses(currentProjectId);
             loadMainPage();
+        }
+    });
+
+    document.getElementById('new-project-modal-close').addEventListener('click', function() {
+        closeNewProjectModal();
+    });
+
+    document.getElementById('new-project-modal-cancel').addEventListener('click', function() {
+        closeNewProjectModal();
+    });
+
+    document.getElementById('new-project-modal-save').addEventListener('click', function() {
+        confirmNewProject();
+    });
+
+    document.getElementById('new-project-name-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmNewProject();
         }
     });
 
@@ -264,10 +310,12 @@ function loadProjects() {
     apiRequest('/projects').then(function(response) {
         var selector = document.getElementById('project-selector');
         selector.innerHTML = '';
-        var defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = 'Выберите проект...';
-        selector.appendChild(defaultOption);
+
+        // Add "New Project" option
+        var newOption = document.createElement('option');
+        newOption.value = 'new';
+        newOption.textContent = '➕ Новый проект';
+        selector.appendChild(newOption);
 
         response.projects.forEach(function(project) {
             var opt = document.createElement('option');
@@ -284,6 +332,49 @@ function loadProjects() {
         }
     }).catch(function(xhr) {
         console.error('Failed to load projects:', xhr);
+    });
+}
+
+// ==========================================
+// New Project Modal
+// ==========================================
+
+function showNewProjectModal() {
+    document.getElementById('new-project-name-input').value = '';
+    document.getElementById('new-project-modal').style.display = 'flex';
+    setTimeout(function() {
+        document.getElementById('new-project-name-input').focus();
+    }, 100);
+}
+
+function closeNewProjectModal() {
+    document.getElementById('new-project-modal').style.display = 'none';
+}
+
+function confirmNewProject() {
+    var name = document.getElementById('new-project-name-input').value.trim();
+    if (!name) {
+        document.getElementById('new-project-name-input').focus();
+        return;
+    }
+    closeNewProjectModal();
+    apiRequest('/projects', 'POST', {
+        name: name
+    }).then(function(response) {
+        var project = response.project;
+        // Add to selector
+        var selector = document.getElementById('project-selector');
+        var opt = document.createElement('option');
+        opt.value = project.id;
+        opt.textContent = project.name;
+        selector.appendChild(opt);
+        selector.value = project.id;
+
+        currentProjectId = project.id;
+        loadProjectUsers(currentProjectId);
+        loadMainPage();
+    }).catch(function(xhr) {
+        console.error('Failed to create project:', xhr);
     });
 }
 
