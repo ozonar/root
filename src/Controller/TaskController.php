@@ -130,9 +130,16 @@ class TaskController extends AbstractController
                 return $this->json(['error' => 'Task cannot be its own parent'], Response::HTTP_BAD_REQUEST);
             }
 
-            $parent = $parentId
-                ? $this->entityManager->getRepository(Task::class)->find($parentId)
-                : null;
+            // Запрещаем класть задачу в её же потомка (рекурсивно проверяем цепочку родителей)
+            if ($parentId !== null) {
+                $parent = $this->entityManager->getRepository(Task::class)->find($parentId);
+                if ($this->isDescendantOf($parent, $task)) {
+                    return $this->json(['error' => 'Task cannot be moved into its own descendant'], Response::HTTP_BAD_REQUEST);
+                }
+            } else {
+                $parent = null;
+            }
+
             $targetOrder = (int) $data['position'];
 
             $task->setParent($parent);
@@ -199,5 +206,21 @@ class TaskController extends AbstractController
             $this->deleteChildren($child);
             $this->entityManager->remove($child);
         }
+    }
+
+    /**
+     * Проверяет, является ли $task предком $target (рекурсивно поднимаясь по родителям).
+     * Если да, то $target нельзя перемещать внутрь $task — это создаст циклическую зависимость.
+     */
+    private function isDescendantOf(Task $target, Task $task): bool
+    {
+        $current = $target;
+        while ($current !== null) {
+            if ($current->getId() === $task->getId()) {
+                return true;
+            }
+            $current = $current->getParent();
+        }
+        return false;
     }
 }
