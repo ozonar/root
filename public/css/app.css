@@ -256,6 +256,33 @@ body {
     padding: 40px 20px;
 }
 
+/* Collapsed tasks (beyond first 10) in page cards */
+.task-item-collapsed {
+    display: none;
+}
+
+.task-expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    margin-top: 4px;
+    color: var(--primary);
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.task-expand-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+}
+
 .loading-pages, .empty-state {
     text-align: center;
     padding: 60px 20px;

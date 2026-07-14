@@ -69,10 +69,9 @@ class ProjectController extends AbstractController
 
         $result = [];
         foreach ($pages as $page) {
-            // Get first 10 tasks for preview
             $tasks = $this->entityManager
                 ->getRepository(Task::class)
-                ->findBy(['page' => $page], ['order' => 'ASC'], 10);
+                ->findBy(['page' => $page], ['order' => 'ASC']);
 
             $tasksResult = [];
             foreach ($tasks as $task) {
@@ -321,6 +320,21 @@ class ProjectController extends AbstractController
                 'createdAt' => $project->getCreatedAt()->format('c'),
             ],
         ], Response::HTTP_CREATED);
+    }
+
+    #[Route('/{id}/select', name: 'api_project_select', methods: ['PUT'])]
+    public function select(int $id): JsonResponse
+    {
+        $project = $this->entityManager->getRepository(Project::class)->find($id);
+        if (!$project) {
+            return $this->json(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $user = $this->getUser();
+        $user->setCurrentProject($project);
+        $this->entityManager->flush();
+
+        return $this->json(['success' => true]);
     }
 
     #[Route('/{id}/rename', name: 'api_project_rename', methods: ['PUT'])]

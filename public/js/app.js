@@ -134,7 +134,7 @@ window.reloadTasks = function(pageId, tasks) {
     if (card) {
         var editorContainer = card.querySelector('.page-card-editor');
         if (editorContainer) {
-            renderInlineTasks(tasks || [], editorContainer, pageId);
+            renderInlineTasks(tasks || [], editorContainer, pageId, 10);
         }
     } else {
         var container = document.getElementById('tasks-container');
@@ -444,7 +444,7 @@ function buildInlineOptions(pageId) {
 // Inline Tasks (for pages grid on main page)
 // ==========================================
 
-function renderInlineTasks(pageTasks, container, pageId) {
+function renderInlineTasks(pageTasks, container, pageId, maxVisible) {
     var options = buildInlineOptions(pageId);
 
     container.innerHTML = '';
@@ -458,6 +458,30 @@ function renderInlineTasks(pageTasks, container, pageId) {
     rootTasks.forEach(function(task) {
         container.appendChild(renderTaskItem(task, 0, pageTasks, options));
     });
+
+    // If maxVisible is set and there are more items, hide excess and add expand button
+    if (maxVisible > 0) {
+        var allItems = container.querySelectorAll('.task-item');
+        if (allItems.length > maxVisible) {
+            for (var i = maxVisible; i < allItems.length; i++) {
+                allItems[i].classList.add('task-item-collapsed');
+            }
+
+            var hiddenCount = allItems.length - maxVisible;
+            var expandBtn = document.createElement('button');
+            expandBtn.className = 'btn task-expand-btn';
+            expandBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Раскрыть все (' + hiddenCount + ')';
+            expandBtn.addEventListener('click', function() {
+                var hidden = container.querySelectorAll('.task-item-collapsed');
+                for (var j = 0; j < hidden.length; j++) {
+                    hidden[j].classList.remove('task-item-collapsed');
+                    hidden[j].classList.add('task-item-expanded');
+                }
+                expandBtn.remove();
+            });
+            container.appendChild(expandBtn);
+        }
+    }
 
     makeSortable();
 }

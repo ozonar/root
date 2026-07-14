@@ -237,11 +237,18 @@ document.addEventListener('DOMContentLoaded', function() {
             this.value = currentProjectId || '';
             return;
         }
-        currentProjectId = parseInt(val);
-        if (currentProjectId) {
-            loadProjectUsers(currentProjectId);
-            loadProjectStatuses(currentProjectId);
-            loadMainPage();
+        var projectId = parseInt(val);
+        if (projectId) {
+            currentProjectId = projectId;
+            apiRequest('/projects/' + projectId + '/select', 'PUT').then(function() {
+                loadProjectUsers(currentProjectId);
+                loadProjectStatuses(currentProjectId);
+                loadMainPage();
+            }).catch(function() {
+                loadProjectUsers(currentProjectId);
+                loadProjectStatuses(currentProjectId);
+                loadMainPage();
+            });
         }
     });
 
@@ -490,8 +497,8 @@ function renderPagesGrid() {
             var editorContainer = document.createElement('div');
             editorContainer.className = 'page-card-editor';
             card.appendChild(editorContainer);
-            var pageTasks = (page.tasks || []).slice(0, 10);
-            renderInlineTasks(pageTasks, editorContainer, page.id);
+            var pageTasks = page.tasks || [];
+            renderInlineTasks(pageTasks, editorContainer, page.id, 10);
         }
 
         grid.appendChild(card);
