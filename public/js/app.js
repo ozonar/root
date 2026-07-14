@@ -463,23 +463,32 @@ function renderInlineTasks(pageTasks, container, pageId, maxVisible) {
     if (maxVisible > 0) {
         var allItems = container.querySelectorAll('.task-item');
         if (allItems.length > maxVisible) {
-            for (var i = maxVisible; i < allItems.length; i++) {
-                allItems[i].classList.add('task-item-collapsed');
-            }
-
-            var hiddenCount = allItems.length - maxVisible;
-            var expandBtn = document.createElement('button');
-            expandBtn.className = 'btn task-expand-btn';
-            expandBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Раскрыть все (' + hiddenCount + ')';
-            expandBtn.addEventListener('click', function() {
-                var hidden = container.querySelectorAll('.task-item-collapsed');
-                for (var j = 0; j < hidden.length; j++) {
-                    hidden[j].classList.remove('task-item-collapsed');
-                    hidden[j].classList.add('task-item-expanded');
+            // Check if this container was already expanded by the user
+            var isAlreadyExpanded = container.closest('[data-tasks-expanded="true"]') !== null;
+            if (!isAlreadyExpanded) {
+                for (var i = maxVisible; i < allItems.length; i++) {
+                    allItems[i].classList.add('task-item-collapsed');
                 }
-                expandBtn.remove();
-            });
-            container.appendChild(expandBtn);
+
+                var hiddenCount = allItems.length - maxVisible;
+                var expandBtn = document.createElement('button');
+                expandBtn.className = 'btn task-expand-btn';
+                expandBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Раскрыть все (' + hiddenCount + ')';
+                expandBtn.addEventListener('click', function() {
+                    var hidden = container.querySelectorAll('.task-item-collapsed');
+                    for (var j = 0; j < hidden.length; j++) {
+                        hidden[j].classList.remove('task-item-collapsed');
+                        hidden[j].classList.add('task-item-expanded');
+                    }
+                    expandBtn.remove();
+                    // Mark the card as expanded so it won't show the button again on re-render
+                    var card = container.closest('.page-card');
+                    if (card) {
+                        card.dataset.tasksExpanded = 'true';
+                    }
+                });
+                container.appendChild(expandBtn);
+            }
         }
     }
 
