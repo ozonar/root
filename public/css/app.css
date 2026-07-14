@@ -1255,6 +1255,10 @@ body {
         gap: 6px;
     }
 
+    .page-card-burger {
+        opacity: 1;
+    }
+
     .page-card-title {
         font-size: 16px;
     }
