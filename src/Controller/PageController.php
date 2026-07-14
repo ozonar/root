@@ -140,7 +140,7 @@ class PageController extends AbstractController
             'parentId' => $task->getParent()?->getId(),
             'isPriority' => $task->isPriority(),
             'assignee' => $task->getAssignee()?->getEmail(),
-            'assigneeName' => $task->getAssignee()?->getName(),
+            'assigneeName' => $task->getAssignee()?->getDisplayName(),
             'createdAt' => $task->getCreatedAt()->format('c'),
         ];
     }

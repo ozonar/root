@@ -73,6 +73,7 @@ class AuthController extends AbstractController
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'name' => $user->getName(),
+                'displayName' => $user->getDisplayName(),
             ],
             'token' => $authToken,
         ], Response::HTTP_CREATED);
@@ -103,6 +104,7 @@ class AuthController extends AbstractController
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'name' => $user->getName(),
+                'displayName' => $user->getDisplayName(),
                 'roles' => $user->getRoles(),
             ],
             'token' => $authToken,
@@ -123,6 +125,7 @@ class AuthController extends AbstractController
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'name' => $user->getName(),
+                'displayName' => $user->getDisplayName(),
                 'roles' => $user->getRoles(),
                 'currentProjectId' => $user->getCurrentProject()?->getId(),
             ],

@@ -80,7 +80,7 @@ class ProjectController extends AbstractController
                     'order' => $task->getOrder(),
                     'parentId' => $task->getParent()?->getId(),
                     'assignee' => $task->getAssignee()?->getEmail(),
-                    'assigneeName' => $task->getAssignee()?->getName(),
+                    'assigneeName' => $task->getAssignee()?->getDisplayName(),
                 ];
             }
 
@@ -124,6 +124,7 @@ class ProjectController extends AbstractController
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'name' => $user->getName(),
+                'displayName' => $user->getDisplayName(),
             ];
         }
 

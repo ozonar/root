@@ -794,7 +794,7 @@ function showAssigneeMenu(x, y, task) {
     // Project users
     projectUsers.forEach(function(u) {
         var li = document.createElement('li');
-        li.innerHTML = '<i class="fas fa-user"></i> ' + (u.name || u.email);
+        li.innerHTML = '<i class="fas fa-user"></i> ' + (u.displayName);
         if (task.assignee === u.email) {
             li.classList.add('selected');
         }
@@ -1009,7 +1009,7 @@ function openTaskModal(taskId) {
     projectUsers.forEach(function(u) {
         var opt = document.createElement('option');
         opt.value = u.email;
-        opt.textContent = u.name || u.email;
+        opt.textContent = u.displayName;
         if (currentAssignee === u.email) {
             opt.selected = true;
         }

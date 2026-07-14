@@ -172,6 +172,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getDisplayName(): string
+    {
+        if ($this->name) {
+            return $this->name;
+        }
+
+        if ($this->email) {
+            $parts = explode('@', $this->email);
+            if (count($parts) === 2 && filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
+                return $parts[0];
+            }
+            return $this->email;
+        }
+
+        return 'noname';
+    }
+
     public function isVerified(): bool
     {
         return $this->isVerified;

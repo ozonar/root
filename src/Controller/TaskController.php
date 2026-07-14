@@ -176,7 +176,7 @@ class TaskController extends AbstractController
             'isPriority' => $task->isPriority(),
             'order' => $task->getOrder(),
             'assignee' => $task->getAssignee()?->getEmail(),
-            'assigneeName' => $task->getAssignee()?->getName(),
+            'assigneeName' => $task->getAssignee()?->getDisplayName(),
             'createdAt' => $task->getCreatedAt()->format('c'),
             'updatedAt' => $task->getUpdatedAt()->format('c'),
         ];
