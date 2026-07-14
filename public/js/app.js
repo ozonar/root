@@ -105,8 +105,10 @@ function reloadPage(pageId) {
 }
 
 function addNewTask(pageId) {
+    var rootTasks = document.querySelectorAll('.task-item[data-page-id="' + pageId + '"][data-parent-id=""]');
+    var order = rootTasks.length;
     apiRequest('/pages/' + pageId + '/tasks', 'POST', {
-        text: '', parentId: null, order: 999
+        text: '', parentId: null, order: order
     }).then(function(response) {
         var task = response.task;
         // Try to find container — could be in page editor or in grid card
@@ -423,8 +425,11 @@ function buildInlineOptions(pageId) {
         onAddAfter: function(taskId) {
             var currentEl = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
             var parentId = currentEl && currentEl.dataset.parentId ? parseInt(currentEl.dataset.parentId) : null;
+            var parentIdAttr = parentId !== null ? parentId : '';
+            var siblings = currentEl ? currentEl.parentNode.querySelectorAll('.task-item[data-parent-id="' + parentIdAttr + '"]') : [];
+            var index = Array.prototype.indexOf.call(siblings, currentEl);
             apiRequest('/pages/' + pageId + '/tasks', 'POST', {
-                text: '', parentId: parentId, order: 999
+                text: '', parentId: parentId, position: index + 1
             }).then(function(response) {
                 var task = response.task;
                 if (currentEl) {

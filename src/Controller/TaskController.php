@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Task;
 use App\Entity\Status;
 use App\Entity\User;
+use App\Service\TaskReorderService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,6 +18,7 @@ class TaskController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
+        private TaskReorderService $taskReorderService,
     ) {
     }
 
@@ -130,7 +132,7 @@ class TaskController extends AbstractController
             $task->setUpdatedAt(new \DateTimeImmutable());
             $task->getPage()->setEditedAt(new \DateTimeImmutable());
 
-            $this->reorderTasks($task, $targetOrder);
+            $this->taskReorderService->reorderWithTargetPosition($task, $targetOrder);
         }
 
         // Возвращаем обновлённый список задач страницы, чтобы фронт обновил массив tasks
@@ -141,39 +143,6 @@ class TaskController extends AbstractController
         $tasks = array_map(fn(Task $t) => $this->serializeTask($t), $allTasks);
 
         return $this->json(['success' => true, 'tasks' => $tasks]);
-    }
-
-    /**
-     * Вставляет задачу в указанную позицию среди всех sibling-задач
-     * (задачи с тем же parent и page) и пересчитывает order для всех.
-     */
-    private function reorderTasks(Task $task, int $targetOrder): void
-    {
-        $parent = $task->getParent();
-        $page = $task->getPage();
-
-        // Берём все sibling-задачи, исключая текущую
-        $allSiblings = $this->entityManager->getRepository(Task::class)
-            ->findBy(['parent' => $parent, 'page' => $page], ['order' => 'ASC']);
-
-        // Собираем массив задач, исключая текущую (чтобы потом вставить в нужное место)
-        $siblings = [];
-        foreach ($allSiblings as $sibling) {
-            if ($sibling->getId() !== $task->getId()) {
-                $siblings[] = $sibling;
-            }
-        }
-
-        // Вставляем задачу в нужную позицию
-        array_splice($siblings, $targetOrder, 0, [$task]);
-
-        // Пересчитываем order для всех
-        $order = 0;
-        foreach ($siblings as $sibling) {
-            $sibling->setOrder($order++);
-        }
-
-        $this->entityManager->flush();
     }
 
     #[Route('/{id}', name: 'api_task_delete', methods: ['DELETE'])]

@@ -6,6 +6,7 @@ use App\Entity\Page;
 use App\Entity\Task;
 use App\Entity\Status;
 use App\Service\StatusService;
+use App\Service\TaskReorderService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +20,7 @@ class PageController extends AbstractController
     public function __construct(
         private EntityManagerInterface $entityManager,
         private StatusService $statusService,
+        private TaskReorderService $taskReorderService,
     ) {
     }
 
@@ -112,6 +114,13 @@ class PageController extends AbstractController
 
         $this->entityManager->persist($task);
         $this->entityManager->flush();
+
+        // Если передан position — вставляем в конкретную позицию, иначе просто пересчитываем
+        if (isset($data['position'])) {
+            $this->taskReorderService->reorderWithTargetPosition($task, (int) $data['position']);
+        } else {
+            $this->taskReorderService->reorderSiblings($task);
+        }
 
         return $this->json([
             'task' => $this->serializeTask($task),
