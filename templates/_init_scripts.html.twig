@@ -80,5 +80,32 @@ document.addEventListener('DOMContentLoaded', function() {
             saveTaskFromModal();
         });
     }
+    // User name edit menu handlers
+    var userNameEl = document.getElementById('user-name');
+    if (userNameEl) {
+        userNameEl.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var currentName = this.textContent || '';
+            showUserNameMenu(e.pageX, e.pageY, currentName);
+        });
+    }
+
+    var usernameSaveBtn = document.getElementById('username-edit-save');
+    if (usernameSaveBtn) {
+        usernameSaveBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            saveUserName();
+        });
+    }
+
+    var usernameInput = document.getElementById('username-edit-input');
+    if (usernameInput) {
+        usernameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.stopPropagation();
+                saveUserName();
+            }
+        });
+    }
 });
 </script>

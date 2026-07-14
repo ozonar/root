@@ -901,6 +901,51 @@ function confirmNewStatus() {
     });
 }
 
+// ==========================================
+// User Name Edit Menu
+// ==========================================
+
+function showUserNameMenu(x, y, currentName) {
+    var menu = document.getElementById('context-menu-username');
+    if (!menu) return;
+
+    var input = document.getElementById('username-edit-input');
+    input.value = currentName || '';
+
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.style.display = 'block';
+
+    // Adjust position
+    var menuWidth = menu.offsetWidth;
+    var menuHeight = menu.offsetHeight;
+    var winWidth = window.innerWidth;
+    var winHeight = window.innerHeight;
+    if (x + menuWidth > winWidth) menu.style.left = (winWidth - menuWidth - 10) + 'px';
+    if (y + menuHeight > winHeight) menu.style.top = (winHeight - menuHeight - 10) + 'px';
+
+    setTimeout(function() {
+        input.focus();
+        input.select();
+    }, 100);
+}
+
+function saveUserName() {
+    var input = document.getElementById('username-edit-input');
+    var name = input.value.trim();
+    if (!name) {
+        input.focus();
+        return;
+    }
+
+    apiRequest('/me/name', 'PUT', { name: name }).then(function() {
+        hideAllContextMenus();
+        location.reload();
+    }).catch(function(err) {
+        console.error('Failed to save user name:', err);
+    });
+}
+
 // Initialize icon select behavior
 document.addEventListener('click', function(e) {
     var iconOption = e.target.closest('.icon-option');

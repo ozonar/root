@@ -131,4 +131,38 @@ class AuthController extends AbstractController
             ],
         ]);
     }
+
+    #[Route('/me/name', name: 'api_me_name', methods: ['PUT'])]
+    public function updateName(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+
+        if (!$user) {
+            return $this->json(['error' => 'Not authenticated'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['name'])) {
+            return $this->json(['error' => 'Name is required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $name = trim($data['name']);
+
+        if ($name === '') {
+            return $this->json(['error' => 'Name cannot be empty'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $user->setName($name);
+        $this->entityManager->flush();
+
+        return $this->json([
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'name' => $user->getName(),
+                'displayName' => $user->getDisplayName(),
+            ],
+        ]);
+    }
 }

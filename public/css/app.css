@@ -180,6 +180,11 @@ body {
 .user-name {
     font-size: 14px;
     color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.15s;
+}
+.user-name:hover {
+    color: var(--text);
 }
 
 /* ==========================================
@@ -732,6 +737,28 @@ body {
     cursor: default;
 }
 
+.context-menu-username-body {
+    padding: 16px;
+    min-width: 220px;
+}
+
+.context-menu-username-body .form-group {
+    margin-bottom: 12px;
+}
+
+.context-menu-username-body label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.context-menu-username-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
 /* ==========================================
    Modal
    ========================================== */
@@ -1128,7 +1155,12 @@ body {
     }
 
     .user-name {
-        display: none;
+        font-size: 13px;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
     }
 
     .header-right .btn {
