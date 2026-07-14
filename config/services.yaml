@@ -27,11 +27,6 @@ services:
             $logDir: '%mailer.log_dir%'
         tags: ['app.mailer_adapter']
 
-    App\Service\Mailer\UnisenderMailerAdapter:
-        arguments:
-            $apiKey: '%env(UNISENDER_API_KEY)%'
-        tags: ['app.mailer_adapter']
-
     # Выбор адаптера на основе параметра mailer.adapter
     App\Service\Mailer\MailerAdapterInterface:
         factory: ['App\Service\Mailer\MailerAdapterFactory', 'create']

@@ -165,4 +165,67 @@ class AuthController extends AbstractController
             ],
         ]);
     }
+
+    #[Route('/register/invite/{token}', name: 'api_register_invite', methods: ['POST'])]
+    public function registerInvite(string $token, Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['email']) || !isset($data['password'])) {
+            return $this->json(['error' => 'Email and password are required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $email = trim($data['email']);
+        $password = $data['password'];
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->json(['error' => 'Invalid email format'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (strlen($password) < 6) {
+            return $this->json(['error' => 'Password must be at least 6 characters'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Find user by invite token
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['verificationToken' => $token]);
+
+        if (!$user) {
+            return $this->json(['error' => 'Invalid or expired invite link'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Check if user already completed registration
+        if ($user->getPassword() !== '' && $user->getPassword() !== null) {
+            return $this->json(['error' => 'Invite already used'], Response::HTTP_CONFLICT);
+        }
+
+        // Check if email already taken
+        $existingUser = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
+        if ($existingUser && $existingUser->getId() !== $user->getId()) {
+            return $this->json(['error' => 'Email already registered'], Response::HTTP_CONFLICT);
+        }
+
+        // Update user with real email and password
+        $user->setEmail($email);
+        $user->setName($data['name'] ?? $user->getName());
+
+        $hashedPassword = $this->passwordHasher->hashPassword($user, $password);
+        $user->setPassword($hashedPassword);
+
+        $user->setVerified(true);
+        $user->setVerificationToken(null);
+
+        $this->entityManager->flush();
+
+        $authToken = $this->tokenService->generateAuthToken($user);
+
+        return $this->json([
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'name' => $user->getName(),
+                'displayName' => $user->getDisplayName(),
+            ],
+            'token' => $authToken,
+        ]);
+    }
 }

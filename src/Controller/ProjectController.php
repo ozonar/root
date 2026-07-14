@@ -113,9 +113,12 @@ class ProjectController extends AbstractController
             return $this->json(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
         }
 
-        // Проверяем, что текущий пользователь — владелец проекта
+        // Проверяем, что текущий пользователь — участник проекта
         $currentUser = $this->getUser();
-        if ($project->getOwner() !== $currentUser) {
+        $isMember = $this->entityManager
+            ->getRepository(UserProject::class)
+            ->findOneBy(['user' => $currentUser, 'project' => $project]);
+        if (!$isMember) {
             return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
         }
 
@@ -126,15 +129,62 @@ class ProjectController extends AbstractController
         $users = [];
         foreach ($userProjects as $up) {
             $user = $up->getUser();
-            $users[] = [
+            $userData = [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'name' => $user->getName(),
                 'displayName' => $user->getDisplayName(),
             ];
+
+            // If user hasn't completed registration (empty password), include invite info
+            if ($user->getPassword() === '' || $user->getPassword() === null) {
+                $userData['isInvited'] = true;
+                $userData['inviteToken'] = $user->getVerificationToken();
+            } else {
+                $userData['isInvited'] = false;
+            }
+
+            $users[] = $userData;
         }
 
         return $this->json(['users' => $users]);
+    }
+
+    #[Route('/{id}/users/{userId}', name: 'api_project_users_remove', methods: ['DELETE'])]
+    public function removeUser(int $id, int $userId, Request $request): JsonResponse
+    {
+        $project = $this->entityManager->getRepository(Project::class)->find($id);
+        if (!$project) {
+            return $this->json(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $currentUser = $this->getUser();
+        if ($project->getOwner() !== $currentUser) {
+            return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+        }
+
+        $user = $this->entityManager->getRepository(User::class)->find($userId);
+        if (!$user) {
+            return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Cannot remove the owner
+        if ($project->getOwner() === $user) {
+            return $this->json(['error' => 'Cannot remove the project owner'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $userProject = $this->entityManager
+            ->getRepository(UserProject::class)
+            ->findOneBy(['user' => $user, 'project' => $project]);
+
+        if (!$userProject) {
+            return $this->json(['error' => 'User is not a member of this project'], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->entityManager->remove($userProject);
+        $this->entityManager->flush();
+
+        return $this->json(['success' => true]);
     }
 
     #[Route('/{id}/statuses', name: 'api_project_statuses', methods: ['GET'])]
@@ -204,70 +254,45 @@ class ProjectController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
-        $email = trim($data['email'] ?? '');
+        $name = trim($data['name'] ?? '');
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return $this->json(['error' => 'Invalid email format'], Response::HTTP_BAD_REQUEST);
+        if ($name === '') {
+            return $this->json(['error' => 'Name is required'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Check if user exists
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
+        // Create a new user with invite token
+        $user = new User();
+        $user->setName($name);
+        $user->setEmail('invite-' . uniqid() . '@local');
+        $user->setRoles(['ROLE_USER']);
 
-        if (!$user) {
-            // Create a new user with a temporary token
-            $user = new User();
-            $user->setEmail($email);
-            $user->setRoles(['ROLE_USER']);
+        // Generate invite token
+        $inviteToken = $this->tokenService->generateToken();
+        $user->setVerificationToken($inviteToken);
 
-            $tempPassword = bin2hex(random_bytes(8));
-            $hashedPassword = $this->passwordHasher->hashPassword($user, $tempPassword);
-            $user->setPassword($hashedPassword);
+        // Set empty password (user will set it during registration)
+        $user->setPassword('');
 
-            $verificationToken = $this->tokenService->generateToken();
-            $user->setVerificationToken($verificationToken);
+        // Set current project so user lands on it after registration
+        $user->setCurrentProject($project);
 
-            $this->entityManager->persist($user);
-            $this->entityManager->flush();
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
 
-            // Send invitation email with temp password
-            $subject = 'Приглашение в проект "' . $project->getName() . '"';
-            $body = sprintf(
-                "Здравствуйте!\n\nВас пригласили в проект \"%s\" в системе Checker.\n\nВаш временный пароль: %s\n\nПожалуйста, войдите в систему и смените пароль.\n\nСсылка для входа: %s\n\nС уважением,\nКоманда Checker",
-                $project->getName(),
-                $tempPassword,
-                $request->getSchemeAndHttpHost() . '/login'
-            );
-            $this->mailerService->send($email, $subject, $body);
-        }
+        // Add user to project
+        $userProject = new UserProject();
+        $userProject->setUser($user);
+        $userProject->setProject($project);
+        $userProject->setRole('member');
 
-        // Check if already in project
-        $existingUP = $this->entityManager
-            ->getRepository(UserProject::class)
-            ->findOneBy(['user' => $user, 'project' => $project]);
+        $this->entityManager->persist($userProject);
+        $this->entityManager->flush();
 
-        if (!$existingUP) {
-            $userProject = new UserProject();
-            $userProject->setUser($user);
-            $userProject->setProject($project);
-            $userProject->setRole('member');
-
-            $this->entityManager->persist($userProject);
-            $this->entityManager->flush();
-
-            // If user already existed, send notification
-            if ($user->isVerified()) {
-                $subject = 'Приглашение в проект "' . $project->getName() . '"';
-                $body = sprintf(
-                    "Здравствуйте!\n\nВас пригласили в проект \"%s\" в системе Checker.\n\nСсылка для входа: %s\n\nС уважением,\nКоманда Checker",
-                    $project->getName(),
-                    $request->getSchemeAndHttpHost() . '/login'
-                );
-                $this->mailerService->send($email, $subject, $body);
-            }
-        }
+        $inviteLink = $request->getSchemeAndHttpHost() . '/register/invite/' . $inviteToken;
 
         return $this->json([
             'success' => true,
+            'inviteLink' => $inviteLink,
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),

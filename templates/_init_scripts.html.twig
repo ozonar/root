@@ -257,4 +257,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Toast notification helper
+function showToast(message) {
+    var container = document.getElementById('toast-container');
+    if (!container) return;
+    var toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(function() {
+        toast.remove();
+    }, 3000);
+}
+
+function copyText(text) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('Ссылка скопирована');
+        });
+    } else {
+        var input = document.createElement('input');
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('Ссылка скопирована');
+    }
+}
 </script>

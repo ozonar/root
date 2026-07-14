@@ -1323,12 +1323,74 @@ function loadProjectUsersList() {
         }
         users.forEach(function(u) {
             var li = document.createElement('li');
-            li.innerHTML = '<span>' + u.displayName + ' <span class="user-email">(' + u.email + ')</span></span>';
+            li.className = 'user-list-item';
+
+            var infoSpan = document.createElement('span');
+            if (u.isInvited) {
+                infoSpan.innerHTML = u.displayName + ' <span class="user-email">(приглашён)</span>';
+            } else {
+                infoSpan.innerHTML = u.displayName + ' <span class="user-email">(' + u.email + ')</span>';
+            }
+            li.appendChild(infoSpan);
+
+            var actionsDiv = document.createElement('div');
+            actionsDiv.className = 'user-list-actions';
+
+            if (u.isInvited) {
+                var copyBtn = document.createElement('button');
+                copyBtn.className = 'btn btn-sm btn-success';
+                copyBtn.innerHTML = '<i class="fas fa-link"></i>';
+                copyBtn.title = 'Скопировать ссылку приглашения';
+                copyBtn.onclick = function() { copyInviteLink(u.inviteToken); };
+                actionsDiv.appendChild(copyBtn);
+            }
+
+            var removeBtn = document.createElement('button');
+            removeBtn.className = 'btn btn-sm btn-danger';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.title = 'Удалить из проекта';
+            removeBtn.onclick = function() { removeProjectUser(u.id); };
+            actionsDiv.appendChild(removeBtn);
+
+            li.appendChild(actionsDiv);
             list.appendChild(li);
         });
     }).catch(function() {
         list.innerHTML = '<li class="user-list-empty">Ошибка загрузки</li>';
     });
+}
+
+function removeProjectUser(userId) {
+    if (!confirm('Вы уверены, что хотите удалить этого пользователя из проекта?')) return;
+
+    apiRequest('/projects/' + currentProjectId + '/users/' + userId, 'DELETE').then(function() {
+        showToast('Пользователь удалён из проекта');
+        loadProjectUsersList();
+    }).catch(function(err) {
+        var msg = 'Ошибка при удалении пользователя';
+        if (err.data && err.data.error) {
+            msg = err.data.error;
+        }
+        alert(msg);
+    });
+}
+
+function copyInviteLink(token) {
+    var link = window.location.origin + '/register/invite/' + token;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(link).then(function() {
+            showToast('Ссылка скопирована');
+        });
+    } else {
+        // Fallback
+        var input = document.createElement('input');
+        input.value = link;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('Ссылка скопирована');
+    }
 }
 
 function loadProjectSettingsStatuses() {
@@ -1457,23 +1519,26 @@ function deleteStatus(statusId) {
 }
 
 function inviteUser() {
-    var emailInput = document.getElementById('invite-user-email');
-    var email = emailInput.value.trim();
+    var nameInput = document.getElementById('invite-user-email');
+    var name = nameInput.value.trim();
     var messageEl = document.getElementById('invite-user-message');
 
-    if (!email) {
+    if (!name) {
         messageEl.className = 'form-message error';
-        messageEl.textContent = 'Введите email';
+        messageEl.textContent = 'Введите имя пользователя';
         return;
     }
 
     messageEl.className = 'form-message';
     messageEl.textContent = 'Отправка...';
 
-    apiRequest('/projects/' + currentProjectId + '/invite', 'POST', { email: email }).then(function(response) {
+    apiRequest('/projects/' + currentProjectId + '/invite', 'POST', { name: name }).then(function(response) {
         messageEl.className = 'form-message success';
-        messageEl.textContent = 'Пользователь приглашён!';
-        emailInput.value = '';
+        var link = response.inviteLink;
+        messageEl.innerHTML = 'Пользователь приглашён! Отправьте ему ссылку:<br>' +
+            '<strong style="font-size:12px;word-break:break-all">' + link + '</strong><br>' +
+            '<button class="btn btn-sm btn-success" style="margin-top:6px" onclick="copyText(\'' + link + '\')"><i class="fas fa-copy"></i> Копировать</button>';
+        nameInput.value = '';
         loadProjectUsersList();
     }).catch(function(err) {
         messageEl.className = 'form-message error';

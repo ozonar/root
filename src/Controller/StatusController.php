@@ -45,7 +45,10 @@ class StatusController extends AbstractController
         }
 
         $currentUser = $this->getUser();
-        if ($project->getOwner() !== $currentUser) {
+        $isMember = $this->entityManager
+            ->getRepository(\App\Entity\UserProject::class)
+            ->findOneBy(['user' => $currentUser, 'project' => $project]);
+        if (!$isMember) {
             return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
         }
 
@@ -72,7 +75,10 @@ class StatusController extends AbstractController
         $project = $status->getProject();
         if ($project) {
             $currentUser = $this->getUser();
-            if ($project->getOwner() !== $currentUser) {
+            $isMember = $this->entityManager
+                ->getRepository(\App\Entity\UserProject::class)
+                ->findOneBy(['user' => $currentUser, 'project' => $project]);
+            if (!$isMember) {
                 return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
             }
         }
@@ -118,7 +124,10 @@ class StatusController extends AbstractController
         $project = $status->getProject();
         if ($project) {
             $currentUser = $this->getUser();
-            if ($project->getOwner() !== $currentUser) {
+            $isMember = $this->entityManager
+                ->getRepository(\App\Entity\UserProject::class)
+                ->findOneBy(['user' => $currentUser, 'project' => $project]);
+            if (!$isMember) {
                 return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
             }
         }
