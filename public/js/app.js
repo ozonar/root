@@ -735,6 +735,53 @@ function showTaskContextMenu(x, y, task) {
     divider1.className = 'divider';
     list.appendChild(divider1);
 
+    // Сдвинуть вправо (indent) — если есть предыдущий sibling, к которому можно стать дочерним
+    var el = document.querySelector('.task-item[data-task-id="' + task.id + '"]');
+    var hasPrevSibling = false;
+    if (el) {
+        var parentId = el.dataset.parentId !== '' ? parseInt(el.dataset.parentId) : null;
+        var order = parseInt(el.dataset.order);
+        var siblings = document.querySelectorAll('.task-item[data-parent-id="' + (parentId !== null ? parentId : '') + '"]');
+        siblings.forEach(function(s) {
+            var sOrder = parseInt(s.dataset.order);
+            if (sOrder < order) {
+                hasPrevSibling = true;
+            }
+        });
+    }
+    if (hasPrevSibling) {
+        var indentLi = document.createElement('li');
+        indentLi.dataset.action = 'indent';
+        indentLi.innerHTML = '<i class="fas fa-indent"></i> Сдвинуть вправо';
+        indentLi.addEventListener('click', function(e) {
+            e.stopPropagation();
+            indentTask(currentTaskId);
+            hideAllContextMenus();
+        });
+        list.appendChild(indentLi);
+    }
+
+    // Сдвинуть влево (outdent) — если есть родитель
+    var hasParent = el && el.dataset.parentId !== '';
+    if (hasParent) {
+        var outdentLi = document.createElement('li');
+        outdentLi.dataset.action = 'outdent';
+        outdentLi.innerHTML = '<i class="fas fa-dedent"></i> Сдвинуть влево';
+        outdentLi.addEventListener('click', function(e) {
+            e.stopPropagation();
+            outdentTask(currentTaskId);
+            hideAllContextMenus();
+        });
+        list.appendChild(outdentLi);
+    }
+
+    // Divider — только если был добавлен хотя бы один из пунктов indent/outdent
+    if (hasPrevSibling || hasParent) {
+        var dividerIndent = document.createElement('li');
+        dividerIndent.className = 'divider';
+        list.appendChild(dividerIndent);
+    }
+
     // Edit
     var editLi = document.createElement('li');
     editLi.dataset.action = 'edit';
