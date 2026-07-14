@@ -799,10 +799,8 @@ body {
 
 .icon-picker-dropdown {
     display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    z-index: 100;
+    position: fixed;
+    z-index: 10000;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
