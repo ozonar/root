@@ -643,6 +643,11 @@ function moveTask(taskId, parentId, position) {
     var el = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
     var pageId = parseInt(el.dataset.pageId);
 
+    // Задача не может стать родителем самой себя
+    if (parentId === taskId) {
+        return;
+    }
+
     apiRequest('/tasks/' + taskId + '/move', 'PUT', {
         parentId: parentId, position: position
     }).then(function() {

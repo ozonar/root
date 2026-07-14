@@ -123,8 +123,15 @@ class TaskController extends AbstractController
 
         // Принимаем parentId (null для корневого уровня) и position (порядковый номер среди sibling)
         if (array_key_exists('parentId', $data) && isset($data['position'])) {
-            $parent = $data['parentId']
-                ? $this->entityManager->getRepository(Task::class)->find($data['parentId'])
+            $parentId = $data['parentId'];
+
+            // Запрещаем задаче быть родителем самой себя
+            if ($parentId === $id) {
+                return $this->json(['error' => 'Task cannot be its own parent'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $parent = $parentId
+                ? $this->entityManager->getRepository(Task::class)->find($parentId)
                 : null;
             $targetOrder = (int) $data['position'];
 
