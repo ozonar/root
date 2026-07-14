@@ -1235,6 +1235,11 @@ body {
         font-size: 13px;
     }
 
+    /* Hide delete button (cross) on mobile */
+    .delete-task-btn {
+        display: none !important;
+    }
+
     /* Task assignee — compact */
     .task-assignee {
         font-size: 11px;

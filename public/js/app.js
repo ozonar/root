@@ -286,16 +286,6 @@ if (isHighPriority) {
     var actions = document.createElement('div');
     actions.className = 'task-actions';
 
-    var addChildBtn = document.createElement('button');
-    addChildBtn.className = 'add-child-btn';
-    addChildBtn.title = 'Добавить подзадачу';
-    addChildBtn.innerHTML = '<i class="fas fa-plus"></i>';
-    addChildBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        options.onAddChild(task.id);
-    });
-    actions.appendChild(addChildBtn);
-
     var deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-task-btn';
     deleteBtn.title = isCompleted ? 'Удалить' : 'Завершить';
