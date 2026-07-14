@@ -622,6 +622,7 @@ function moveTask(taskId, parentId, position) {
 // ==========================================
 
 function showStatusContextMenu(x, y, task) {
+    hideAllContextMenus();
     var menu = document.getElementById('context-menu-status');
     if (!menu) return;
 
@@ -684,6 +685,7 @@ function showStatusContextMenu(x, y, task) {
 // ==========================================
 
 function showTaskContextMenu(x, y, task) {
+    hideAllContextMenus();
     var menu = document.getElementById('context-menu-task');
     if (!menu) return;
 
@@ -767,6 +769,7 @@ function showTaskContextMenu(x, y, task) {
 // ==========================================
 
 function showAssigneeMenu(x, y, task) {
+    hideAllContextMenus();
     var menu = document.getElementById('context-menu-assignee');
     if (!menu) return;
 
@@ -906,6 +909,7 @@ function confirmNewStatus() {
 // ==========================================
 
 function showUserNameMenu(x, y, currentName) {
+    hideAllContextMenus();
     var menu = document.getElementById('context-menu-username');
     if (!menu) return;
 
