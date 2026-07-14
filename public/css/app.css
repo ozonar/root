@@ -1104,3 +1104,256 @@ body {
 .text-muted {
     color: var(--text-muted);
 }
+
+/* ==========================================
+   Mobile Responsive
+   ========================================== */
+
+@media (max-width: 768px) {
+    /* ---- Header ---- */
+    .header {
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    .header-title {
+        font-size: 16px;
+    }
+
+    .project-selector {
+        min-width: 120px;
+        max-width: 160px;
+        font-size: 13px;
+        padding: 4px 8px;
+    }
+
+    .user-name {
+        display: none;
+    }
+
+    .header-right .btn {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    /* ---- Pages Grid (Main Page) ---- */
+    .pages-grid {
+        max-width: 100%;
+        padding: 0 8px;
+        gap: 12px;
+    }
+
+    .new-page-bottom {
+        max-width: 100%;
+        padding: 0 8px;
+    }
+
+    .page-card-header {
+        padding: 12px 14px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .page-card-title {
+        font-size: 16px;
+    }
+
+    .page-card-date {
+        font-size: 12px;
+    }
+
+    .preview-task {
+        padding: 4px 14px;
+        font-size: 13px;
+    }
+
+    .preview-empty,
+    .preview-more {
+        padding: 8px 14px;
+    }
+
+    /* ---- Full Page Editor ---- */
+    .full-editor {
+        max-width: 100%;
+        padding: 0 8px;
+    }
+
+    .full-editor-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .full-editor-header h2 {
+        font-size: 18px;
+    }
+
+    .page-title-editable {
+        font-size: 18px;
+        min-width: 120px;
+    }
+
+    .editor-actions .btn {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+
+    /* ---- Tasks ---- */
+    .task-row {
+        padding: 6px 4px;
+        gap: 4px;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+    }
+
+    /* Hide drag handle on mobile */
+    .drag-handle {
+        display: none;
+    }
+
+    /* Hide status badge on mobile */
+    .task-status-badge.show {
+        display: none !important;
+    }
+
+    /* Task text — allow wrapping properly */
+    .task-text {
+        font-size: 14px;
+        line-height: 1.5;
+        min-height: 22px;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+    }
+
+    /* Task actions always visible on mobile */
+    .task-actions {
+        opacity: 1;
+    }
+
+    .task-actions button {
+        padding: 4px 6px;
+        font-size: 13px;
+    }
+
+    /* Task assignee — compact */
+    .task-assignee {
+        font-size: 11px;
+        padding: 1px 4px;
+    }
+
+    /* Task children indent reduced */
+    .task-children {
+        margin-left: 20px;
+    }
+
+    /* ---- Checkbox label word-break ---- */
+    .checkbox-label {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        word-break: break-all;
+    }
+
+    /* ---- Modal ---- */
+    .modal {
+        max-width: 100%;
+        margin: 0 8px;
+        max-height: 90vh;
+    }
+
+    .modal-header {
+        padding: 16px 16px 0;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .modal-footer {
+        padding: 12px 16px;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* ---- Context menus on mobile ---- */
+    .context-menu {
+        min-width: 160px;
+        font-size: 13px;
+    }
+
+    /* ---- Main content padding ---- */
+    .main-content {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* ---- Header extra small ---- */
+    .header {
+        padding: 0 8px;
+        gap: 4px;
+    }
+
+    .header-title {
+        font-size: 14px;
+    }
+
+    .project-selector {
+        min-width: 80px;
+        max-width: 120px;
+        font-size: 12px;
+        padding: 3px 6px;
+    }
+
+    .header-right .btn {
+        padding: 3px 6px;
+        font-size: 11px;
+    }
+
+    /* ---- Pages Grid ---- */
+    .pages-grid {
+        gap: 8px;
+    }
+
+    .page-card-header {
+        padding: 10px 12px;
+    }
+
+    .page-card-title {
+        font-size: 15px;
+    }
+
+    /* ---- Tasks ---- */
+    .task-row {
+        padding: 4px 2px;
+        gap: 3px;
+    }
+
+    .task-text {
+        font-size: 13px;
+    }
+
+    .task-checkbox {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+
+    .task-children {
+        margin-left: 16px;
+    }
+
+    /* ---- Main content ---- */
+    .main-content {
+        padding: 8px;
+    }
+
+    /* ---- Full editor ---- */
+    .page-title-editable {
+        font-size: 16px;
+        min-width: 80px;
+    }
+}
