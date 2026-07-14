@@ -300,11 +300,24 @@ function renderPagesGrid() {
         titleLink.textContent = page.title;
         header.appendChild(titleLink);
 
+        var headerRight = document.createElement('div');
+        headerRight.className = 'page-card-header-right';
+
         var dateSpan = document.createElement('span');
         dateSpan.className = 'page-card-date';
         dateSpan.textContent = formatRelativeTime(dateStr);
         dateSpan.title = formatTooltipDate(dateStr);
-        header.appendChild(dateSpan);
+        headerRight.appendChild(dateSpan);
+
+        var burgerBtn = document.createElement('button');
+        burgerBtn.className = 'burger-btn page-card-burger';
+        burgerBtn.title = 'Настройки страницы';
+        burgerBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        burgerBtn.dataset.pageId = page.id;
+        burgerBtn.dataset.pageTitle = page.title;
+        headerRight.appendChild(burgerBtn);
+
+        header.appendChild(headerRight);
 
         card.appendChild(header);
 

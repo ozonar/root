@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Page;
 use App\Entity\Task;
 use App\Entity\Status;
+use App\Entity\UserProject;
 use App\Service\StatusService;
 use App\Service\TaskReorderService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -83,6 +84,41 @@ class PageController extends AbstractController
         }
 
         $page->setEditedAt(new \DateTimeImmutable());
+        $this->entityManager->flush();
+
+        return $this->json(['success' => true]);
+    }
+
+    #[Route('/{id}', name: 'api_page_delete', methods: ['DELETE'])]
+    public function delete(int $id): JsonResponse
+    {
+        $page = $this->entityManager->getRepository(Page::class)->find($id);
+        if (!$page) {
+            return $this->json(['error' => 'Page not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $project = $page->getProject();
+        $user = $this->getUser();
+
+        // Проверяем, что пользователь имеет любой доступ к проекту
+        $userProject = $this->entityManager
+            ->getRepository(UserProject::class)
+            ->findOneBy(['user' => $user, 'project' => $project]);
+
+        if (!$userProject) {
+            return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+        }
+
+        // Удаляем все задачи страницы
+        $tasks = $this->entityManager
+            ->getRepository(Task::class)
+            ->findBy(['page' => $page]);
+
+        foreach ($tasks as $task) {
+            $this->entityManager->remove($task);
+        }
+
+        $this->entityManager->remove($page);
         $this->entityManager->flush();
 
         return $this->json(['success' => true]);

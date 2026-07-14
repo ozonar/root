@@ -4,8 +4,12 @@
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Hide all context menus on any click
-    document.addEventListener('click', function() {
+    // Hide all context menus on any click (except burger menu and its trigger)
+    document.addEventListener('click', function(e) {
+        var target = e.target;
+        if (target.closest('.context-menu') || target.closest('.burger-btn')) {
+            return;
+        }
         hideAllContextMenus();
     });
 
@@ -80,6 +84,45 @@ document.addEventListener('DOMContentLoaded', function() {
             saveTaskFromModal();
         });
     }
+    // Page settings menu handlers
+    var pageSettingsSave = document.getElementById('page-settings-save');
+    if (pageSettingsSave) {
+        pageSettingsSave.addEventListener('click', function(e) {
+            e.stopPropagation();
+            savePageTitle();
+        });
+    }
+
+    var pageSettingsDelete = document.getElementById('page-settings-delete');
+    if (pageSettingsDelete) {
+        pageSettingsDelete.addEventListener('click', function(e) {
+            e.stopPropagation();
+            deletePage();
+        });
+    }
+
+    var pageSettingsInput = document.getElementById('page-settings-title-input');
+    if (pageSettingsInput) {
+        pageSettingsInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.stopPropagation();
+                savePageTitle();
+            }
+        });
+    }
+
+    // Burger button click handler (delegated for dynamically created cards)
+    document.addEventListener('click', function(e) {
+        var burgerBtn = e.target.closest('.burger-btn');
+        if (burgerBtn) {
+            e.stopPropagation();
+            e.preventDefault();
+            var pageId = parseInt(burgerBtn.dataset.pageId);
+            var pageTitle = burgerBtn.dataset.pageTitle || '';
+            showPageSettingsMenu(e.pageX, e.pageY, pageId, pageTitle);
+        }
+    });
+
     // User name edit menu handlers
     var userNameEl = document.getElementById('user-name');
     if (userNameEl) {

@@ -905,6 +905,95 @@ function confirmNewStatus() {
 }
 
 // ==========================================
+// Page Settings Menu (Burger Menu)
+// ==========================================
+
+function showPageSettingsMenu(x, y, pageId, pageTitle) {
+    hideAllContextMenus();
+    var menu = document.getElementById('context-menu-page');
+    if (!menu) return;
+
+    var input = document.getElementById('page-settings-title-input');
+    input.value = pageTitle || '';
+    input.dataset.pageId = pageId;
+
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.style.display = 'block';
+
+    // Adjust position
+    var menuWidth = menu.offsetWidth;
+    var menuHeight = menu.offsetHeight;
+    var winWidth = window.innerWidth;
+    var winHeight = window.innerHeight;
+    if (x + menuWidth > winWidth) menu.style.left = (winWidth - menuWidth - 10) + 'px';
+    if (y + menuHeight > winHeight) menu.style.top = (winHeight - menuHeight - 10) + 'px';
+
+    setTimeout(function() {
+        input.focus();
+        input.select();
+    }, 100);
+}
+
+function savePageTitle() {
+    var input = document.getElementById('page-settings-title-input');
+    var title = input.value.trim();
+    var pageId = parseInt(input.dataset.pageId);
+    if (!title || !pageId) {
+        input.focus();
+        return;
+    }
+
+    apiRequest('/pages/' + pageId, 'PUT', { title: title }).then(function() {
+        hideAllContextMenus();
+        // Update the card title on the main page
+        var card = document.querySelector('.page-card[data-page-id="' + pageId + '"]');
+        if (card) {
+            var titleLink = card.querySelector('.page-card-title');
+            if (titleLink) {
+                titleLink.textContent = title;
+            }
+            var burgerBtn = card.querySelector('.burger-btn[data-page-id="' + pageId + '"]');
+            if (burgerBtn) {
+                burgerBtn.dataset.pageTitle = title;
+            }
+        }
+        // If on the page editor, update the title
+        var pageTitleEl = document.getElementById('full-page-title');
+        if (pageTitleEl) {
+            pageTitleEl.textContent = title;
+        }
+    }).catch(function(err) {
+        console.error('Failed to save page title:', err);
+    });
+}
+
+function deletePage() {
+    var input = document.getElementById('page-settings-title-input');
+    var pageId = parseInt(input.dataset.pageId);
+    if (!pageId) return;
+
+    if (!confirm('Вы уверены, что хотите удалить эту страницу?')) return;
+
+    apiRequest('/pages/' + pageId, 'DELETE').then(function() {
+        hideAllContextMenus();
+        // If on the page editor, redirect to main
+        if (window.location.pathname.startsWith('/page/')) {
+            window.location.href = '/';
+        } else {
+            // On main page — remove the card
+            var card = document.querySelector('.page-card[data-page-id="' + pageId + '"]');
+            if (card) {
+                card.remove();
+            }
+        }
+    }).catch(function(err) {
+        console.error('Failed to delete page:', err);
+        alert('Не удалось удалить страницу. Возможно, у вас нет доступа.');
+    });
+}
+
+// ==========================================
 // User Name Edit Menu
 // ==========================================
 

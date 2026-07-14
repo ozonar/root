@@ -18,6 +18,9 @@
             <button id="add-task-btn" class="btn btn-sm btn-primary" title="Добавить задачу">
                 <i class="fas fa-plus"></i> Задача
             </button>
+            <button id="delete-page-btn" class="btn btn-sm btn-outline btn-danger-outline" title="Удалить страницу">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
     </header>
 
@@ -109,6 +112,18 @@ document.addEventListener('DOMContentLoaded', function() {
             currentProjectId = projectId;
             loadProjectUsers(projectId);
         }
+    });
+
+    // Delete page button
+    document.getElementById('delete-page-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (!confirm('Вы уверены, что хотите удалить эту страницу?')) return;
+        apiRequest('/pages/' + PAGE_ID, 'DELETE').then(function() {
+            window.location.href = '/';
+        }).catch(function(err) {
+            console.error('Failed to delete page:', err);
+            alert('Не удалось удалить страницу. Возможно, у вас нет доступа.');
+        });
     });
 
     // Auto-save page title on input

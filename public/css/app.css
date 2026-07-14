@@ -271,6 +271,40 @@ body {
     padding: 16px 20px;
 }
 
+.page-card-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.burger-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 6px;
+    font-size: 14px;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.burger-btn:hover {
+    color: var(--text);
+    background: var(--bg-sidebar);
+}
+
+.page-card-burger {
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.page-card:hover .page-card-burger {
+    opacity: 1;
+}
+
 .page-card-title {
     font-size: 18px;
     font-weight: 600;
@@ -737,6 +771,29 @@ body {
     cursor: default;
 }
 
+.context-menu-page-body {
+    padding: 16px;
+    min-width: 240px;
+}
+
+.context-menu-page-body .form-group {
+    margin-bottom: 12px;
+}
+
+.context-menu-page-body label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.context-menu-page-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
 .context-menu-username-body {
     padding: 16px;
     min-width: 220px;
@@ -1061,6 +1118,18 @@ body {
 .btn-outline:hover {
     background: var(--bg-sidebar);
     color: var(--text);
+}
+
+.btn-danger-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--danger);
+}
+
+.btn-danger-outline:hover {
+    background: #fef2f2;
+    border-color: var(--danger);
+    color: var(--danger);
 }
 
 .btn-sm {
