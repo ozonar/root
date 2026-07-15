@@ -42,11 +42,27 @@ class AppController extends AbstractController
     public function registerInvite(string $token): Response
     {
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['verificationToken' => $token]);
-        $inviteName = $user ? $user->getName() : null;
+
+        if (!$user) {
+            return $this->render('register_invite.html.twig', [
+                'inviteToken' => $token,
+                'inviteName' => null,
+                'error' => 'Приглашение не найдено или срок его действия истёк.',
+            ]);
+        }
+
+        if ($user->isVerified()) {
+            return $this->render('register_invite.html.twig', [
+                'inviteToken' => $token,
+                'inviteName' => $user->getName(),
+                'error' => 'Это приглашение уже было использовано.',
+            ]);
+        }
 
         return $this->render('register_invite.html.twig', [
             'inviteToken' => $token,
-            'inviteName' => $inviteName,
+            'inviteName' => $user->getName(),
+            'error' => null,
         ]);
     }
 }

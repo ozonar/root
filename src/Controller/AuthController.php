@@ -228,7 +228,7 @@ class AuthController extends AbstractController
         }
 
         // Check if user already completed registration
-        if ($user->getPassword() !== '' && $user->getPassword() !== null) {
+        if ($user->isVerified()) {
             return $this->json(['error' => 'Invite already used'], Response::HTTP_CONFLICT);
         }
 

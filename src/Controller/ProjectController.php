@@ -270,8 +270,8 @@ class ProjectController extends AbstractController
         $inviteToken = $this->tokenService->generateToken();
         $user->setVerificationToken($inviteToken);
 
-        // Set empty password (user will set it during registration)
-        $user->setPassword('');
+        // Set random password (user will replace it during registration)
+        $user->setPassword(bin2hex(random_bytes(32)));
 
         // Set current project so user lands on it after registration
         $user->setCurrentProject($project);
