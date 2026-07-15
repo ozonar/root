@@ -1727,9 +1727,11 @@ body {
         align-items: flex-start;
     }
 
-    /* Hide drag handle on mobile */
+    /* Drag handle on mobile — always visible */
     .drag-handle {
-        display: none;
+        opacity: 1;
+        font-size: 12px;
+        padding: 2px 4px;
     }
 
     /* Hide status badge on mobile */

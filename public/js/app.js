@@ -550,23 +550,41 @@ function makeSortable() {
         var handle = item.querySelector('.drag-handle');
         if (handle) {
             handle.removeEventListener('mousedown', handle._dragStart);
+            handle.removeEventListener('touchstart', handle._touchStart);
             handle._dragStart = function(e) { dragStart(e, item); };
+            handle._touchStart = function(e) { dragStart(e, item); };
             handle.addEventListener('mousedown', handle._dragStart);
+            handle.addEventListener('touchstart', handle._touchStart, { passive: false });
         }
     });
+}
+
+function getPageY(e) {
+    return e.touches ? e.touches[0].pageY : e.pageY;
+}
+
+function getClientX(e) {
+    return e.touches ? e.touches[0].clientX : e.clientX;
+}
+
+function getClientY(e) {
+    return e.touches ? e.touches[0].clientY : e.clientY;
 }
 
 function dragStart(e, taskItem) {
     e.preventDefault();
     var taskId = parseInt(taskItem.dataset.taskId);
-    var startY = e.pageY;
+    var startY = getPageY(e);
     var isDragging = false;
     var clone = null;
     var dropTarget = null;
     var dropPosition = 'after';
 
-    function onMouseMove(e) {
-        if (!isDragging && Math.abs(e.pageY - startY) > 5) {
+    function onMove(e) {
+        var pageY = getPageY(e);
+        var clientX = getClientX(e);
+        var clientY = getClientY(e);
+        if (!isDragging && Math.abs(pageY - startY) > 5) {
             isDragging = true;
             taskItem.classList.add('dragging');
             clone = taskItem.cloneNode(true);
@@ -584,20 +602,20 @@ function dragStart(e, taskItem) {
         }
         if (isDragging && clone) {
             var taskItemRect = taskItem.getBoundingClientRect();
-            clone.style.top = (e.pageY - 20) + 'px';
+            clone.style.top = (pageY - 20) + 'px';
             clone.style.left = taskItemRect.left + 'px';
 
             document.querySelectorAll('.task-item').forEach(function(el) {
                 el.classList.remove('drag-over');
             });
 
-            var elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+            var elemBelow = document.elementFromPoint(clientX, clientY);
             if (elemBelow) {
                 var target = elemBelow.closest('.task-item');
                 if (target && parseInt(target.dataset.taskId) !== taskId) {
                     var targetRect = target.getBoundingClientRect();
                     var targetMiddle = targetRect.top + targetRect.height / 2;
-                    dropPosition = e.pageY < targetMiddle ? 'before' : 'after';
+                    dropPosition = pageY < targetMiddle ? 'before' : 'after';
                     dropTarget = target;
 
                     if (dropPosition === 'before') {
@@ -613,9 +631,11 @@ function dragStart(e, taskItem) {
         }
     }
 
-    function onMouseUp(e) {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
+    function onEnd(e) {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
         taskItem.classList.remove('dragging');
         if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
 
@@ -635,8 +655,10 @@ function dragStart(e, taskItem) {
         });
     }
 
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
 }
 
 function moveTask(taskId, parentId, position) {
