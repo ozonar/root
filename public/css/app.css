@@ -211,6 +211,7 @@ body {
     height: calc(100vh - var(--header-height));
     overflow-y: auto;
     padding: 24px;
+    padding-bottom: 300px;
 }
 
 /* ==========================================
@@ -1816,6 +1817,7 @@ body {
     /* ---- Main content padding ---- */
     .main-content {
         padding: 12px;
+        padding-bottom: 300px;
     }
 }
 
@@ -1878,6 +1880,7 @@ body {
     /* ---- Main content ---- */
     .main-content {
         padding: 8px;
+        padding-bottom: 300px;
     }
 
     /* ---- Full editor ---- */
