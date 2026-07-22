@@ -1432,6 +1432,61 @@ body {
     min-height: 20px;
 }
 
+/* ==========================================
+   Delete Project Tab
+   ========================================== */
+
+.delete-project-section {
+    padding: 8px 0;
+}
+
+.delete-project-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius);
+    color: #991b1b;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.delete-project-warning i {
+    font-size: 18px;
+    color: #dc2626;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+#delete-project-btn {
+    margin-top: 16px;
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+#delete-project-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.tab-danger {
+    color: #dc2626 !important;
+}
+
+.tab-danger:hover {
+    color: #b91c1c !important;
+}
+
+.tab-danger.active {
+    color: #dc2626 !important;
+    border-bottom-color: #dc2626 !important;
+}
+
 .form-message.success {
     color: var(--success);
 }

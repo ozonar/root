@@ -393,4 +393,64 @@ class ProjectController extends AbstractController
             ],
         ]);
     }
+
+    #[Route('/{id}', name: 'api_project_delete', methods: ['DELETE'])]
+    public function delete(int $id): JsonResponse
+    {
+        $project = $this->entityManager->getRepository(Project::class)->find($id);
+        if (!$project) {
+            return $this->json(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $currentUser = $this->getUser();
+        if ($project->getOwner() !== $currentUser) {
+            return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+        }
+
+        // Remove all user-project associations
+        $userProjects = $this->entityManager
+            ->getRepository(UserProject::class)
+            ->findBy(['project' => $project]);
+
+        foreach ($userProjects as $up) {
+            $user = $up->getUser();
+            // If this was the user's current project, reset it
+            if ($user->getCurrentProject() === $project) {
+                $user->setCurrentProject(null);
+            }
+            $this->entityManager->remove($up);
+        }
+
+        // Remove all pages and their tasks
+        $pages = $this->entityManager
+            ->getRepository(\App\Entity\Page::class)
+            ->findBy(['project' => $project]);
+
+        foreach ($pages as $page) {
+            $tasks = $this->entityManager
+                ->getRepository(Task::class)
+                ->findBy(['page' => $page]);
+
+            foreach ($tasks as $task) {
+                $this->entityManager->remove($task);
+            }
+
+            $this->entityManager->remove($page);
+        }
+
+        // Remove all statuses
+        $statuses = $this->entityManager
+            ->getRepository(Status::class)
+            ->findBy(['project' => $project]);
+
+        foreach ($statuses as $status) {
+            $this->entityManager->remove($status);
+        }
+
+        // Finally remove the project itself
+        $this->entityManager->remove($project);
+        $this->entityManager->flush();
+
+        return $this->json(['success' => true]);
+    }
 }

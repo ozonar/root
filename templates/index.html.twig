@@ -140,6 +140,7 @@
                 <button class="tab active" data-tab="users">Пользователи</button>
                 <button class="tab" data-tab="rename">Переименовать</button>
                 <button class="tab" data-tab="statuses">Статусы</button>
+                <button class="tab tab-danger" data-tab="delete">Удалить</button>
             </div>
 
             <!-- Tab: Users -->
@@ -188,6 +189,24 @@
                     <ul class="status-list" id="settings-statuses-list">
                         <li class="status-list-empty">Загрузка...</li>
                     </ul>
+                </div>
+            </div>
+
+            <!-- Tab: Delete Project -->
+            <div class="tab-content" id="tab-delete">
+                <div class="delete-project-section">
+                    <p class="delete-project-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Удаление проекта приведёт к безвозвратному удалению всех страниц, задач, статусов и участников проекта. Это действие нельзя отменить.
+                    </p>
+                    <div class="form-group">
+                        <label>Введите название проекта <strong id="delete-project-name-label"></strong> для подтверждения:</label>
+                        <input type="text" id="delete-project-confirm-input" class="form-input" placeholder="Введите название проекта...">
+                    </div>
+                    <div id="delete-project-message" class="form-message"></div>
+                    <button class="btn btn-danger" id="delete-project-btn" disabled>
+                        <i class="fas fa-trash"></i> Удалить проект
+                    </button>
                 </div>
             </div>
         </div>

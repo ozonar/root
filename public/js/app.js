@@ -1688,6 +1688,90 @@ function addStatusFromSettings() {
 }
 
 // ==========================================
+// Delete Project
+// ==========================================
+
+function loadDeleteProjectTab() {
+    var selector = document.getElementById('project-selector');
+    var selectedOption = selector.options[selector.selectedIndex];
+    var projectName = selectedOption ? selectedOption.textContent : '';
+
+    document.getElementById('delete-project-name-label').textContent = '"' + projectName + '"';
+    document.getElementById('delete-project-confirm-input').value = '';
+    document.getElementById('delete-project-message').className = 'form-message';
+    document.getElementById('delete-project-message').textContent = '';
+    document.getElementById('delete-project-btn').disabled = true;
+}
+
+function onDeleteProjectConfirmInput() {
+    var selector = document.getElementById('project-selector');
+    var selectedOption = selector.options[selector.selectedIndex];
+    var projectName = selectedOption ? selectedOption.textContent : '';
+
+    var input = document.getElementById('delete-project-confirm-input');
+    var btn = document.getElementById('delete-project-btn');
+    btn.disabled = input.value.trim() !== projectName;
+}
+
+function deleteProject() {
+    var selector = document.getElementById('project-selector');
+    var selectedOption = selector.options[selector.selectedIndex];
+    var projectName = selectedOption ? selectedOption.textContent : '';
+
+    var input = document.getElementById('delete-project-confirm-input');
+    if (input.value.trim() !== projectName) {
+        return;
+    }
+
+    if (!confirm('Вы уверены, что хотите удалить проект "' + projectName + '" полностью? Это действие нельзя отменить.')) {
+        return;
+    }
+
+    var messageEl = document.getElementById('delete-project-message');
+    messageEl.className = 'form-message';
+    messageEl.textContent = 'Удаление...';
+
+    apiRequest('/projects/' + currentProjectId, 'DELETE').then(function() {
+        closeProjectSettingsModal();
+
+        // Remove project from selector
+        var opt = selector.querySelector('option[value="' + currentProjectId + '"]');
+        if (opt) opt.remove();
+
+        // Select another project or show empty state
+        if (selector.options.length > 1) {
+            // There's at least "New Project" option + maybe others
+            var firstProject = selector.querySelector('option:not([value="new"])');
+            if (firstProject) {
+                selector.value = firstProject.value;
+                currentProjectId = parseInt(firstProject.value);
+                apiRequest('/projects/' + currentProjectId + '/select', 'PUT').then(function() {
+                    loadProjectUsers(currentProjectId);
+                    loadProjectStatuses(currentProjectId);
+                    loadMainPage();
+                });
+            } else {
+                // No projects left
+                currentProjectId = null;
+                document.getElementById('pages-grid').innerHTML = '<div class="empty-state"><i class="fas fa-folder-open fa-3x"></i><p>Нет проектов. Создайте новый проект.</p></div>';
+            }
+        } else {
+            currentProjectId = null;
+            document.getElementById('pages-grid').innerHTML = '<div class="empty-state"><i class="fas fa-folder-open fa-3x"></i><p>Нет проектов. Создайте новый проект.</p></div>';
+        }
+
+        showToast('Проект "' + projectName + '" удалён');
+    }).catch(function(err) {
+        messageEl.className = 'form-message error';
+        if (err.data && err.data.error) {
+            messageEl.textContent = err.data.error;
+        } else {
+            messageEl.textContent = 'Ошибка при удалении проекта';
+        }
+    });
+}
+
+// ==========================================
 // Icon Picker Component
 // ==========================================
 

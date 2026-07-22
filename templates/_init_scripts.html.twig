@@ -200,6 +200,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (target) {
                 target.classList.add('active');
             }
+
+            // Load delete tab data when switching to it
+            if (this.dataset.tab === 'delete') {
+                loadDeleteProjectTab();
+            }
         });
     });
 
@@ -254,6 +259,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 addStatusFromSettings();
             }
+        });
+    }
+
+    // Delete project handlers
+    var deleteProjectConfirmInput = document.getElementById('delete-project-confirm-input');
+    if (deleteProjectConfirmInput) {
+        deleteProjectConfirmInput.addEventListener('input', function() {
+            onDeleteProjectConfirmInput();
+        });
+    }
+
+    var deleteProjectBtn = document.getElementById('delete-project-btn');
+    if (deleteProjectBtn) {
+        deleteProjectBtn.addEventListener('click', function() {
+            deleteProject();
         });
     }
 });
