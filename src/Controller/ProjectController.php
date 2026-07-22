@@ -407,19 +407,31 @@ class ProjectController extends AbstractController
             return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
         }
 
+        // Reset currentProject for users who have this project selected
+        $usersWithCurrentProject = $this->entityManager
+            ->getRepository(User::class)
+            ->findBy(['currentProject' => $project]);
+
+        foreach ($usersWithCurrentProject as $user) {
+            $user->setCurrentProject(null);
+        }
+
         // Remove all user-project associations
         $userProjects = $this->entityManager
             ->getRepository(UserProject::class)
             ->findBy(['project' => $project]);
 
         foreach ($userProjects as $up) {
-            $user = $up->getUser();
-            // If this was the user's current project, reset it
-            if ($user->getCurrentProject() === $project) {
-                $user->setCurrentProject(null);
-            }
             $this->entityManager->remove($up);
         }
+
+        // Nullify status_id on all tasks of this project to avoid FK violation
+        // when statuses are deleted
+        $conn = $this->entityManager->getConnection();
+        $conn->executeStatement(
+            'UPDATE task SET status_id = NULL WHERE page_id IN (SELECT id FROM page WHERE project_id = :projectId)',
+            ['projectId' => $project->getId()]
+        );
 
         // Remove all pages and their tasks
         $pages = $this->entityManager
