@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Entity\Project;
 use App\Entity\UserProject;
 use App\Service\TokenService;
 use App\Service\StatusService;
@@ -260,6 +259,75 @@ class AuthController extends AbstractController
                 'displayName' => $user->getDisplayName(),
             ],
             'token' => $authToken,
+        ]);
+    }
+
+    #[Route('/invite/{token}/join', name: 'api_invite_join', methods: ['POST'])]
+    public function joinByInvite(string $token): JsonResponse
+    {
+        $currentUser = $this->getUser();
+        if (!$currentUser) {
+            return $this->json(['error' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Find the invited user by verification token
+        $invitedUser = $this->entityManager->getRepository(User::class)->findOneBy(['verificationToken' => $token]);
+
+        if (!$invitedUser) {
+            return $this->json(['error' => 'Invalid or expired invite link'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Find the project the invited user was added to
+        $userProject = $this->entityManager
+            ->getRepository(UserProject::class)
+            ->findOneBy(['user' => $invitedUser]);
+
+        if (!$userProject) {
+            return $this->json(['error' => 'Invite project not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $project = $userProject->getProject();
+
+        // Check if current user is already a member of this project
+        $existingMembership = $this->entityManager
+            ->getRepository(UserProject::class)
+            ->findOneBy(['user' => $currentUser, 'project' => $project]);
+
+        if ($existingMembership) {
+            // Already a member — just switch to this project
+            $currentUser->setCurrentProject($project);
+            $this->entityManager->flush();
+
+            return $this->json([
+                'success' => true,
+                'alreadyMember' => true,
+                'project' => [
+                    'id' => $project->getId(),
+                    'name' => $project->getName(),
+                ],
+            ]);
+        }
+
+        // Add current user to the project as member
+        $newUserProject = new UserProject();
+        $newUserProject->setUser($currentUser);
+        $newUserProject->setProject($project);
+        $newUserProject->setRole('member');
+
+        $this->entityManager->persist($newUserProject);
+
+        // Set as current project
+        $currentUser->setCurrentProject($project);
+
+        $this->entityManager->flush();
+
+        return $this->json([
+            'success' => true,
+            'alreadyMember' => false,
+            'project' => [
+                'id' => $project->getId(),
+                'name' => $project->getName(),
+            ],
         ]);
     }
 }

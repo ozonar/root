@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация | Root</title>
+    <title>Приглашение в проект | Root</title>
     <link rel="stylesheet" href="{{ asset('css/fontawesome/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
@@ -17,8 +17,33 @@
             <p style="text-align: center; margin-top: 1rem;">
                 <a href="/login" class="btn btn-primary">Войти</a>
             </p>
+        {% elseif app.user %}
+            {# Пользователь уже авторизован — предлагаем присоединиться к проекту #}
+            <p class="auth-subtitle">Приглашение в проект</p>
+
+            {% if projectName %}
+                <p style="text-align: center; margin-bottom: 1.5rem; color: #666;">
+                    Вас приглашают в проект <strong>{{ projectName }}</strong>
+                </p>
+            {% endif %}
+
+            <div id="join-error" class="alert alert-error" style="display: none;"></div>
+            <div id="join-success" class="alert alert-success" style="display: none;"></div>
+
+            <button id="join-project-btn" class="btn btn-primary btn-block">
+                <i class="fas fa-sign-in-alt"></i> Присоединиться к проекту
+            </button>
+            <p style="text-align: center; margin-top: 1rem;">
+                <a href="/" class="btn btn-secondary btn-block">Перейти в приложение</a>
+            </p>
         {% else %}
             <p class="auth-subtitle">Завершите регистрацию</p>
+
+            {% if projectName %}
+                <p style="text-align: center; margin-bottom: 1.5rem; color: #666;">
+                    Вас приглашают в проект <strong>{{ projectName }}</strong>
+                </p>
+            {% endif %}
 
             <div id="reg-error" class="alert alert-error" style="display: none;"></div>
             <div id="reg-success" class="alert alert-success" style="display: none;"></div>
@@ -44,6 +69,51 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // === Обработчик для авторизованных пользователей ===
+    var joinBtn = document.getElementById('join-project-btn');
+    if (joinBtn) {
+        var joinErrorEl = document.getElementById('join-error');
+        var joinSuccessEl = document.getElementById('join-success');
+
+        joinBtn.addEventListener('click', function() {
+            joinErrorEl.style.display = 'none';
+            joinSuccessEl.style.display = 'none';
+            joinBtn.disabled = true;
+            joinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Присоединяемся...';
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/invite/{{ inviteToken }}/join', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('X-Auth-Token', localStorage.getItem('auth_token'));
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    var data = JSON.parse(xhr.responseText);
+                    joinSuccessEl.textContent = 'Вы присоединились к проекту! Перенаправляем...';
+                    joinSuccessEl.style.display = 'block';
+                    joinBtn.style.display = 'none';
+                    setTimeout(function() {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    var err;
+                    try { err = JSON.parse(xhr.responseText); } catch(e) { err = {}; }
+                    joinErrorEl.textContent = err.error || 'Ошибка при присоединении к проекту';
+                    joinErrorEl.style.display = 'block';
+                    joinBtn.disabled = false;
+                    joinBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Присоединиться к проекту';
+                }
+            };
+            xhr.onerror = function() {
+                joinErrorEl.textContent = 'Ошибка соединения';
+                joinErrorEl.style.display = 'block';
+                joinBtn.disabled = false;
+                joinBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Присоединиться к проекту';
+            };
+            xhr.send();
+        });
+    }
+
+    // === Обработчик для неавторизованных пользователей ===
     var form = document.getElementById('register-invite-form');
     if (!form) return;
 

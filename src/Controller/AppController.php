@@ -41,9 +41,9 @@ class AppController extends AbstractController
     #[Route('/register/invite/{token}', name: 'app_register_invite')]
     public function registerInvite(string $token): Response
     {
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['verificationToken' => $token]);
+        $invitedUser = $this->entityManager->getRepository(User::class)->findOneBy(['verificationToken' => $token]);
 
-        if (!$user) {
+        if (!$invitedUser) {
             return $this->render('register_invite.html.twig', [
                 'inviteToken' => $token,
                 'inviteName' => null,
@@ -51,17 +51,25 @@ class AppController extends AbstractController
             ]);
         }
 
-        if ($user->isVerified()) {
+        if ($invitedUser->isVerified()) {
             return $this->render('register_invite.html.twig', [
                 'inviteToken' => $token,
-                'inviteName' => $user->getName(),
+                'inviteName' => $invitedUser->getName(),
                 'error' => 'Это приглашение уже было использовано.',
             ]);
         }
 
+        // Find the project this user was invited to
+        $userProject = $this->entityManager
+            ->getRepository(\App\Entity\UserProject::class)
+            ->findOneBy(['user' => $invitedUser]);
+
+        $projectName = $userProject ? $userProject->getProject()->getName() : null;
+
         return $this->render('register_invite.html.twig', [
             'inviteToken' => $token,
-            'inviteName' => $user->getName(),
+            'inviteName' => $invitedUser->getName(),
+            'projectName' => $projectName,
             'error' => null,
         ]);
     }
