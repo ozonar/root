@@ -677,6 +677,24 @@ function dragStart(e, taskItem) {
     document.addEventListener('touchend', onEnd);
 }
 
+function flushSave(taskId) {
+    // Принудительно сохраняем текст задачи, если есть незавершённый debouncedSave
+    var key = 'task-text-' + taskId;
+    if (saveTimers[key]) {
+        clearTimeout(saveTimers[key]);
+        delete saveTimers[key];
+        var el = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
+        if (el) {
+            var textEl = el.querySelector('.task-text');
+            if (textEl) {
+                var html = textEl.innerHTML;
+                return apiRequest('/tasks/' + taskId, 'PUT', { text: html });
+            }
+        }
+    }
+    return Promise.resolve();
+}
+
 function moveTask(taskId, parentId, position) {
     var el = document.querySelector('.task-item[data-task-id="' + taskId + '"]');
     var pageId = parseInt(el.dataset.pageId);
@@ -686,10 +704,13 @@ function moveTask(taskId, parentId, position) {
         return;
     }
 
-    apiRequest('/tasks/' + taskId + '/move', 'PUT', {
-        parentId: parentId, position: position
-    }).then(function() {
-        reloadPage(pageId);
+    // Принудительно сохраняем текст перед перемещением, чтобы он не потерялся
+    flushSave(taskId).then(function() {
+        apiRequest('/tasks/' + taskId + '/move', 'PUT', {
+            parentId: parentId, position: position
+        }).then(function() {
+            reloadPage(pageId);
+        });
     });
 }
 
