@@ -425,15 +425,7 @@ class ProjectController extends AbstractController
             $this->entityManager->remove($up);
         }
 
-        // Nullify status_id on all tasks of this project to avoid FK violation
-        // when statuses are deleted
-        $conn = $this->entityManager->getConnection();
-        $conn->executeStatement(
-            'UPDATE task SET status_id = NULL WHERE page_id IN (SELECT id FROM page WHERE project_id = :projectId)',
-            ['projectId' => $project->getId()]
-        );
-
-        // Remove all pages and their tasks
+        // Remove all pages and their tasks first (this also removes FK to statuses)
         $pages = $this->entityManager
             ->getRepository(\App\Entity\Page::class)
             ->findBy(['project' => $project]);
@@ -449,6 +441,9 @@ class ProjectController extends AbstractController
 
             $this->entityManager->remove($page);
         }
+
+        // Flush early so tasks are deleted before we touch statuses
+        $this->entityManager->flush();
 
         // Remove all statuses
         $statuses = $this->entityManager
