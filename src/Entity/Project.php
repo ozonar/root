@@ -30,13 +30,13 @@ class Project
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
-    #[ORM\OneToMany(mappedBy: 'project', targetEntity: UserProject::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: UserProject::class)]
     private Collection $userProjects;
 
-    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Page::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Page::class)]
     private Collection $pages;
 
-    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Status::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Status::class)]
     private Collection $statuses;
 
     public function __construct()

@@ -39,7 +39,7 @@ class Page
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
-    #[ORM\OneToMany(mappedBy: 'page', targetEntity: Task::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'page', targetEntity: Task::class, cascade: ['persist'])]
     #[ORM\OrderBy(['order' => 'ASC'])]
     private Collection $tasks;
 

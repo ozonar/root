@@ -427,12 +427,26 @@ class ProjectController extends AbstractController
             ->findBy(['project' => $project]);
 
         foreach ($pages as $page) {
+            // Remove tasks in correct order: first children, then parents
             $tasks = $this->entityManager
                 ->getRepository(Task::class)
                 ->findBy(['page' => $page]);
 
+            // First pass: collect all task IDs
+            $taskIds = array_map(fn(Task $t) => $t->getId(), $tasks);
+
+            // Remove child tasks first (those that have a parent)
             foreach ($tasks as $task) {
-                $this->entityManager->remove($task);
+                if ($task->getParent() !== null) {
+                    $this->entityManager->remove($task);
+                }
+            }
+
+            // Then remove root tasks (those without a parent)
+            foreach ($tasks as $task) {
+                if ($task->getParent() === null) {
+                    $this->entityManager->remove($task);
+                }
             }
 
             $this->entityManager->remove($page);
