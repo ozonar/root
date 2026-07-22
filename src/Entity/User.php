@@ -34,10 +34,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\JoinColumn(nullable: true)]
     private ?Project $currentProject = null;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: UserProject::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: UserProject::class, cascade: ['persist'])]
     private Collection $userProjects;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Page::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Page::class, cascade: ['persist'])]
     private Collection $pages;
 
     #[ORM\Column(length: 255, nullable: true)]
