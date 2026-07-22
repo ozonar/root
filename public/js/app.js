@@ -854,7 +854,7 @@ function showTaskContextMenu(x, y, task) {
             onDelete: function(taskId) {
                 apiRequest('/tasks/' + taskId, 'DELETE').then(function() { reloadPage(pageId); });
             }
-        });
+        }, true);
         hideAllContextMenus();
     });
     list.appendChild(deleteLi);
