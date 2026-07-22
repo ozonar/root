@@ -488,6 +488,30 @@ body {
     transition: opacity 0.2s;
 }
 
+/* ==========================================
+   Save Animation — green flash
+   ========================================== */
+
+@keyframes save-flash {
+    0% {
+        background-color: rgba(16, 185, 129, 0.3);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+    }
+    50% {
+        background-color: rgba(16, 185, 129, 0.15);
+        box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: none;
+    }
+}
+
+.task-row.save-flash {
+    animation: save-flash 0.8s ease-out forwards;
+    border-radius: 6px;
+}
+
 .task-item.dragging {
     opacity: 0.5;
 }

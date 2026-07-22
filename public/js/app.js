@@ -85,6 +85,18 @@ function apiRequest(path, method, data) {
 }
 
 // ==========================================
+// Save Animation — green flash on element
+// ==========================================
+
+function animateSave(el) {
+    if (!el) return;
+    el.classList.remove('save-flash');
+    // Force reflow to restart animation
+    void el.offsetWidth;
+    el.classList.add('save-flash');
+}
+
+// ==========================================
 // Debounced save (1 second default)
 // ==========================================
 
@@ -314,7 +326,9 @@ if (isHighPriority) {
         var taskId = task.id;
         var html = text.innerHTML;
         debouncedSave('task-text-' + taskId, function() {
-            apiRequest('/tasks/' + taskId, 'PUT', { text: html });
+            apiRequest('/tasks/' + taskId, 'PUT', { text: html }).then(function() {
+                animateSave(row);
+            });
         });
     });
 
@@ -324,7 +338,9 @@ if (isHighPriority) {
             var html = text.innerHTML;
             var textContent = text.textContent.trim();
             if (textContent) {
-                apiRequest('/tasks/' + task.id, 'PUT', { text: html });
+                apiRequest('/tasks/' + task.id, 'PUT', { text: html }).then(function() {
+                    animateSave(row);
+                });
             }
             options.onAddAfter(task.id);
         }
