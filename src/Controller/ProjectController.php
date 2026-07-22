@@ -445,6 +445,14 @@ class ProjectController extends AbstractController
         // Flush early so tasks are deleted before we touch statuses
         $this->entityManager->flush();
 
+        // Nullify status_id on any remaining tasks referencing these statuses
+        // (Doctrine's DELETE FROM task doesn't clear status_id on other rows)
+        $conn = $this->entityManager->getConnection();
+        $conn->executeStatement(
+            'UPDATE task SET status_id = NULL WHERE status_id IN (SELECT id FROM status WHERE project_id = :projectId)',
+            ['projectId' => $project->getId()]
+        );
+
         // Remove all statuses
         $statuses = $this->entityManager
             ->getRepository(Status::class)
