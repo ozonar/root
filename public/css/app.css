@@ -1968,3 +1968,27 @@ body {
         min-width: 80px;
     }
 }
+
+/* ==========================================
+   Push Notification Button
+   ========================================== */
+
+.push-subscribe-btn {
+    margin-right: 8px;
+    color: var(--text-muted);
+    transition: color 0.2s, background 0.2s;
+}
+
+.push-subscribe-btn:hover {
+    color: var(--warning);
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.push-subscribe-btn.active {
+    color: var(--warning);
+}
+
+.push-subscribe-btn.active:hover {
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+}

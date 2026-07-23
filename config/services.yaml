@@ -37,3 +37,10 @@ services:
     App\Service\Mailer\MailerService:
         arguments:
             $adapter: '@App\Service\Mailer\MailerAdapterInterface'
+
+    # Push Notification Service
+    App\Service\PushNotificationService:
+        arguments:
+            $vapidPublicKey: '%env(VAPID_PUBLIC_KEY)%'
+            $vapidPrivateKey: '%env(VAPID_PRIVATE_KEY)%'
+            $vapidSubject: '%env(VAPID_SUBJECT)%'

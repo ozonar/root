@@ -1896,3 +1896,179 @@ function createIconPicker(selectedIcon, onChange) {
 
     return wrapper;
 }
+
+// ==========================================
+// Push Notifications
+// ==========================================
+
+let swRegistration = null;
+let isPushSubscribed = false;
+
+/**
+ * Регистрация Service Worker.
+ */
+function registerServiceWorker() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        console.log('Push notifications not supported');
+        return Promise.resolve(false);
+    }
+
+    return navigator.serviceWorker.register('/sw.js').then(function(registration) {
+        swRegistration = registration;
+        return true;
+    }).catch(function(error) {
+        console.error('Service Worker registration failed:', error);
+        return false;
+    });
+}
+
+/**
+ * Получить VAPID публичный ключ с сервера.
+ */
+function getVapidPublicKey() {
+    return apiRequest('/push/vapid-public-key').then(function(response) {
+        return response.publicKey;
+    });
+}
+
+/**
+ * Подписаться на push-уведомления для текущего проекта.
+ */
+function subscribeToPush(projectId) {
+    if (!swRegistration) {
+        return registerServiceWorker().then(function(registered) {
+            if (!registered) return false;
+            return doSubscribe(projectId);
+        });
+    }
+    return doSubscribe(projectId);
+}
+
+function doSubscribe(projectId) {
+    return getVapidPublicKey().then(function(publicKey) {
+        var applicationServerKey = urlBase64ToUint8Array(publicKey);
+        return swRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: applicationServerKey,
+        });
+    }).then(function(subscription) {
+        var subData = subscription.toJSON();
+        return apiRequest('/push/subscribe', 'POST', {
+            projectId: projectId,
+            endpoint: subData.endpoint,
+            keys: subData.keys,
+        });
+    }).then(function(response) {
+        if (response.success) {
+            isPushSubscribed = true;
+            updatePushButton();
+            showToast('Уведомления включены');
+        }
+        return response.success;
+    }).catch(function(error) {
+        console.error('Failed to subscribe to push:', error);
+        if (error.code === 20 || (error.data && error.data.error === 'AbortError')) {
+            showToast('Разрешите уведомления в настройках браузера');
+        } else {
+            showToast('Ошибка подписки на уведомления');
+        }
+        return false;
+    });
+}
+
+/**
+ * Отписаться от push-уведомлений для текущего проекта.
+ */
+function unsubscribeFromPush(projectId) {
+    if (!swRegistration) {
+        isPushSubscribed = false;
+        updatePushButton();
+        return Promise.resolve(false);
+    }
+
+    return swRegistration.pushManager.getSubscription().then(function(subscription) {
+        if (subscription) {
+            return subscription.unsubscribe();
+        }
+    }).then(function() {
+        return apiRequest('/push/unsubscribe', 'POST', {
+            projectId: projectId,
+        });
+    }).then(function(response) {
+        if (response.success) {
+            isPushSubscribed = false;
+            updatePushButton();
+            showToast('Уведомления отключены');
+        }
+        return response.success;
+    }).catch(function(error) {
+        console.error('Failed to unsubscribe from push:', error);
+        return false;
+    });
+}
+
+/**
+ * Проверить статус подписки для текущего проекта.
+ */
+function checkPushStatus(projectId) {
+    if (!swRegistration) {
+        isPushSubscribed = false;
+        updatePushButton();
+        return;
+    }
+
+    apiRequest('/push/status?projectId=' + projectId).then(function(response) {
+        isPushSubscribed = response.subscribed;
+        updatePushButton();
+    }).catch(function() {
+        isPushSubscribed = false;
+        updatePushButton();
+    });
+}
+
+/**
+ * Переключить подписку на уведомления.
+ */
+function togglePushSubscription(projectId) {
+    if (isPushSubscribed) {
+        unsubscribeFromPush(projectId);
+    } else {
+        subscribeToPush(projectId);
+    }
+}
+
+/**
+ * Обновить состояние кнопки подписки.
+ */
+function updatePushButton() {
+    var btn = document.getElementById('push-subscribe-btn');
+    if (!btn) return;
+
+    if (isPushSubscribed) {
+        btn.classList.add('active');
+        btn.title = 'Отключить уведомления';
+        btn.innerHTML = '<i class="fas fa-bell"></i>';
+    } else {
+        btn.classList.remove('active');
+        btn.title = 'Включить уведомления';
+        btn.innerHTML = '<i class="fas fa-bell-slash"></i>';
+    }
+}
+
+/**
+ * Конвертация base64 URL-safe строки в Uint8Array.
+ */
+function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+
+    var rawData = window.atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+
+    for (var i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}

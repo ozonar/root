@@ -17,6 +17,9 @@
             </button>
         </div>
         <div class="header-right">
+            <button id="push-subscribe-btn" class="btn btn-sm btn-outline push-subscribe-btn" title="Включить уведомления" style="display:none;">
+                <i class="fas fa-bell-slash"></i>
+            </button>
             <span id="user-name" class="user-name"></span>
             <button id="logout-btn" class="btn btn-sm btn-outline" title="Выйти">
                 <i class="fas fa-sign-out-alt"></i>
@@ -243,6 +246,21 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/login';
     });
 
+    // Инициализация push-уведомлений
+    registerServiceWorker().then(function(supported) {
+        var pushBtn = document.getElementById('push-subscribe-btn');
+        if (pushBtn) {
+            pushBtn.style.display = supported ? 'inline-flex' : 'none';
+        }
+        if (supported) {
+            pushBtn.addEventListener('click', function() {
+                if (currentProjectId) {
+                    togglePushSubscription(currentProjectId);
+                }
+            });
+        }
+    });
+
     document.getElementById('logout-btn').addEventListener('click', function() {
         localStorage.removeItem('auth_token');
         window.location.href = '/login';
@@ -263,10 +281,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadProjectUsers(currentProjectId);
                 loadProjectStatuses(currentProjectId);
                 loadMainPage();
+                checkPushStatus(currentProjectId);
             }).catch(function() {
                 loadProjectUsers(currentProjectId);
                 loadProjectStatuses(currentProjectId);
                 loadMainPage();
+                checkPushStatus(currentProjectId);
             });
         }
     });
@@ -355,6 +375,7 @@ function loadProjects() {
             currentProjectId = response.currentProjectId;
             loadProjectUsers(currentProjectId);
             loadMainPage();
+            checkPushStatus(currentProjectId);
         }
     }).catch(function(xhr) {
         console.error('Failed to load projects:', xhr);
