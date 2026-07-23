@@ -32,8 +32,8 @@ class PushSubscription
     #[ORM\Column(length: 50)]
     private ?string $authToken = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $lastChanges = null;
+    #[ORM\Column(nullable: false)]
+    private \DateTimeImmutable $lastChanges;
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
@@ -41,6 +41,7 @@ class PushSubscription
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
+        $this->lastChanges = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -103,12 +104,12 @@ class PushSubscription
         return $this;
     }
 
-    public function getLastChanges(): ?\DateTimeImmutable
+    public function getLastChanges(): \DateTimeImmutable
     {
         return $this->lastChanges;
     }
 
-    public function setLastChanges(?\DateTimeImmutable $lastChanges): static
+    public function setLastChanges(\DateTimeImmutable $lastChanges): static
     {
         $this->lastChanges = $lastChanges;
         return $this;

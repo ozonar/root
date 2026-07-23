@@ -91,6 +91,7 @@ class PushSubscriptionController extends AbstractController
         $subscription->setEndpoint($endpoint);
         $subscription->setP256dh($p256dh);
         $subscription->setAuthToken($authToken);
+        $subscription->setLastChanges(new \DateTimeImmutable());
 
         $this->entityManager->persist($subscription);
         $this->entityManager->flush();
