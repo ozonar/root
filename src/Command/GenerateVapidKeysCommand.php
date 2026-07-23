@@ -19,14 +19,15 @@ class GenerateVapidKeysCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('subject', InputArgument::REQUIRED, 'VAPID subject (mailto: or https://)')
+            ->addArgument('email', InputArgument::REQUIRED, 'Admin email for VAPID subject')
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $subject = $input->getArgument('subject');
+        $email = $input->getArgument('email');
+        $subject = 'mailto:' . $email;
 
         $io->title('VAPID Key Generator');
 
