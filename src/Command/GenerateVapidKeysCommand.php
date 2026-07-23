@@ -5,6 +5,7 @@ namespace App\Command;
 use Minishlink\WebPush\VAPID;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -15,9 +16,17 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class GenerateVapidKeysCommand extends Command
 {
+    protected function configure(): void
+    {
+        $this
+            ->addArgument('subject', InputArgument::REQUIRED, 'VAPID subject (mailto: or https://)')
+        ;
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $subject = $input->getArgument('subject');
 
         $io->title('VAPID Key Generator');
 
@@ -27,7 +36,7 @@ class GenerateVapidKeysCommand extends Command
         $io->writeln('');
         $io->writeln('VAPID_PUBLIC_KEY=' . $keys['publicKey']);
         $io->writeln('VAPID_PRIVATE_KEY=' . $keys['privateKey']);
-        $io->writeln('VAPID_SUBJECT=mailto:admin@example.com');
+        $io->writeln('VAPID_SUBJECT=' . $subject);
         $io->writeln('');
 
         $io->success('Copy the keys above into your .env file.');
